@@ -1,4 +1,29 @@
 import axios from "axios";
+import { ChatGPTAPI } from 'chatgpt'
+
+async function GPTRun(prompt) {
+  const api = new ChatGPTAPI({
+    apiKey: process.env.OPENAI_API_KEY
+  })
+
+  const res = await api.sendMessage(prompt)
+  return res.text;
+}
+async function GPTRunForEach(prompts,substringToReplace,replaceWithStringArray)
+{
+    let outputArray=[];
+    for (let i = 0; i < prompts.length; i++) {
+        let prompt = prompts[i];
+        let replaceWithString = replaceWithStringArray[i];
+        finalPrompt= prompt.replace(substringToReplace,replaceWithString);
+        result=await GPTRun(finalPrompt);
+        outputArray.push(result);
+    }
+    return outputArray
+}
+
+
+
 import OpenAI from "openai";
 const openai = new OpenAI();
 import { MongoClient } from "mongodb";
@@ -32,18 +57,21 @@ export async function findFromDB(collectionName, filter, returnField) {
 // const orderCollection = db.collection('chartInkCalls');
 // const cIId = await orderCollection.insertOne(req.body);
 
-export async function generateImagePrompts(prompt) {
-    
-     
+export async function GetMidjourneyImages(prompts) {
+    let outputArray=[];
+    for (let i = 0; i < prompts.length; i++)
+{        const e = prompts[i];
     const result = await generateImage(prompt);
-    
+    outputArray.push(result);
+}
+    return outputArray
   }
   
   // Call the function
   //generateImagePrompts(stories);
   export async function generateImage(prompt)
   {
-    let promptcomplete=prompt + " --cref https://i.postimg.cc/3R1P5Rz5/image.png --cw 100";
+    let promptcomplete=prompt;
     console.log(promptcomplete);
     
     let data = JSON.stringify({
@@ -67,16 +95,7 @@ export async function generateImagePrompts(prompt) {
       
       let response=await axios.request(config);
       console.log(JSON.stringify(response.data));
-    
-      try {
-        const imgUrl = await getImageUrl(response.data.task_id);//'1c169900-c933-45c0-8366-8efa3e2dca2a');
-        //console.log('asdas');
-        console.log(imgUrl);
-        // Use the imgUrl as needed
-      } catch (error) {
-        // Handle the error
-      }
-    
+      return response.data.task_id;    
       
   }
   export async function getImageUrl(task_id) {
@@ -99,11 +118,7 @@ export async function generateImagePrompts(prompt) {
       const checkInterval = setInterval(async () => {
         try {
           let res = await axios.post(endpoint, data);
-         // console.log(res.data.status);
-          //console.log(res.data.task_id);
-          //console.log(res.data.task_result.image_url);
-          // Assuming 'res.data' contains the status and imgUrl
-          // Check if the status is 'success'
+        
           if (res.data && res.data.status === 'finished') {
             clearInterval(checkInterval); // Stop checking
             resolve(res.data.task_result.image_url); // Resolve promise with imgUrl
@@ -120,3 +135,5 @@ export async function generateImagePrompts(prompt) {
     });
   }
   
+
+  let FinalMovies=await CloudinaryForEach(images,storyDetails,channel.Motivation.CloudinaryConfig,channelTags);
