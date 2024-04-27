@@ -1,4 +1,6 @@
 const fs = require('fs');
+const { createClient, srt } = require('@deepgram/sdk');
+const deepgram = createClient('a7056d8828505c8de14a6210f133bcdb1efc21f2');
 
 async function generateVoice(text) {
   const fetch = (await import('node-fetch')).default;
@@ -23,14 +25,46 @@ async function generateVoice(text) {
   };
 
   try {
+    const filePath = 'output.mp3';
     const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/y1adqrqs4jNaANXsIZnD', options);
     const buffer = await response.arrayBuffer();
     const data = Buffer.from(buffer);
-    fs.writeFileSync('output.mp3', data);
+    fs.writeFileSync(filePath, data);
     console.log('MP3 file has been saved.');
+
+    // const audioData = fs.readFileSync(filePath);
+    console.log('deepgram');   
+
+    const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
+        fs.readFileSync(filePath),
+        {
+          model: "nova-2",
+          smart_format: true,
+          utterances: true
+        },
+      );
+
+      if (error) throw error;
+      if (!error) 
+      {
+         const stream = fs.createWriteStream("output.srt", { flags: "a" });
+         const captions = srt(result);
+         console.log(captions);
+         stream.write(captions);
+        // stream.end();
+      }
+
+
   } catch (err) {
     console.error(err);
   }
 }
+
+// URL of the audio file you want to transcribe
+
+// Read the audio file
+
+
+
 
 generateVoice('This script loads the video and audio files, applies the audio mixing filter, and saves the output without re-encoding the video.');
