@@ -11,40 +11,54 @@ const OpenAI = require('openai');
 const {MongoClient} = require('mongodb');
 
 async function GPTRun(prompt) {
-  //console.log(prompt);
+ // console.log('GPTRun',prompt);
   const api = new ChatGPTAPI({
-    apiKey: 'sk-proj-flBNtJRF6iECImcgt20hT3BlbkFJ3pdQ2Baiwnne2KMwOl2B' //process.env.OPENAI_API_KEY
+    apiKey: 'sk-proj-flBNtJRF6iECImcgt20hT3BlbkFJ3pdQ2Baiwnne2KMwOl2B', //process.env.OPENAI_API_KEY,
+    completionParams: {
+      model: 'gpt-3.5-turbo-0125',
+    }
+  
   })
 
   const res = await api.sendMessage(prompt)
-  //console.log(res);
-  return res.text;
+ // console.log(res);
+  let result= convertMarkdownToJsonArray(res.text)
+  return result;
 }
 async function GPTRunForEach(mainprompt,substringToReplace,replaceWithStringArray)
 {
     let outputArray=[];
-    //console.log(replaceWithStringArray);
+//    console.log('GPTRunForEach' ,replaceWithStringArray);
 if(true){
     for (let i = 0; i < replaceWithStringArray.length; i++) {
         let prompt = replaceWithStringArray[i];
-        let replaceWithString = replaceWithStringArray[i];
-
+        let replaceWithString =await JSON.stringify(replaceWithStringArray[i]);
+        
         finalPrompt= mainprompt.replace(substringToReplace,replaceWithString);
-     //   console.log(finalPrompt)
+      //  console.log('finalPrompt',finalPrompt);
     result=await GPTRun(finalPrompt);
-    outputArray.push(...(convertMarkdownToJsonArray(result)))
-    }
+    //console.log(result.length);
+    if (result.length) outputArray.push(...result);
+    console.log(outputArray.length);
    // console.log(outputArray);
   }
     return outputArray
 }
-
+}
+let errorcount=0;
 function convertMarkdownToJsonArray(markdownString) {
+  let jsonArray=[];
+  try {
+      // console.log('convertMarkdownToJsonArray',markdownString);
     // Remove the Markdown code block formatting
     const jsonString = markdownString.replace(/^```json\s+/, '').replace(/\s+```$/, '');
 
     // Parse the JSON string into a JavaScript object
-    const jsonArray = JSON.parse(jsonString);
+     jsonArray = JSON.parse(jsonString);
+
+  } catch (e) {
+    console.log(errorcount++);
+  }
 
     return jsonArray;
 }
