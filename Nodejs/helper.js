@@ -1,32 +1,55 @@
-import axios from "axios";
-import { ChatGPTAPI } from 'chatgpt'
+const axios = require('axios');
+// const {ChatGPTAPI} = require('chatgpt');
+let ChatGPTAPI;
+async function setupChatGPTAPI() {
+    const module = await import('chatgpt');
+    ChatGPTAPI = module.ChatGPTAPI;
+      // Ensure main is called only after the import completes
+}
+
+const OpenAI = require('openai');
+const {MongoClient} = require('mongodb');
 
 async function GPTRun(prompt) {
+  //console.log(prompt);
   const api = new ChatGPTAPI({
-    apiKey: process.env.OPENAI_API_KEY
+    apiKey: 'sk-proj-flBNtJRF6iECImcgt20hT3BlbkFJ3pdQ2Baiwnne2KMwOl2B' //process.env.OPENAI_API_KEY
   })
 
   const res = await api.sendMessage(prompt)
+  //console.log(res);
   return res.text;
 }
-async function GPTRunForEach(prompts,substringToReplace,replaceWithStringArray)
+async function GPTRunForEach(mainprompt,substringToReplace,replaceWithStringArray)
 {
     let outputArray=[];
-    for (let i = 0; i < prompts.length; i++) {
-        let prompt = prompts[i];
+    //console.log(replaceWithStringArray);
+if(true){
+    for (let i = 0; i < replaceWithStringArray.length; i++) {
+        let prompt = replaceWithStringArray[i];
         let replaceWithString = replaceWithStringArray[i];
-        finalPrompt= prompt.replace(substringToReplace,replaceWithString);
-        result=await GPTRun(finalPrompt);
-        outputArray.push(result);
+
+        finalPrompt= mainprompt.replace(substringToReplace,replaceWithString);
+     //   console.log(finalPrompt)
+    result=await GPTRun(finalPrompt);
+    outputArray.push(...(convertMarkdownToJsonArray(result)))
     }
+   // console.log(outputArray);
+  }
     return outputArray
 }
 
+function convertMarkdownToJsonArray(markdownString) {
+    // Remove the Markdown code block formatting
+    const jsonString = markdownString.replace(/^```json\s+/, '').replace(/\s+```$/, '');
 
+    // Parse the JSON string into a JavaScript object
+    const jsonArray = JSON.parse(jsonString);
 
-import OpenAI from "openai";
+    return jsonArray;
+}
+
 const openai = new OpenAI();
-import { MongoClient } from "mongodb";
 const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
 let client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 async function dbConnect() {
@@ -35,7 +58,7 @@ async function dbConnect() {
   }
   return client.db();
 }
-export async function findFromDB(collectionName, filter, returnField) {
+async function findFromDB(collectionName, filter, returnField) {
   try {
       const db = await dbConnect();
       if (!collectionName) throw new Error('collection not defined');
@@ -52,26 +75,47 @@ export async function findFromDB(collectionName, filter, returnField) {
       return null;
   }
 }
-// let symConf=findFromDB('TradingData',{symbol:position.tradingSymbol});
-// const db = await dbConnect();
-// const orderCollection = db.collection('chartInkCalls');
-// const cIId = await orderCollection.insertOne(req.body);
-
-export async function GetMidjourneyImages(prompts) {
-    let outputArray=[];
-    for (let i = 0; i < prompts.length; i++)
-{        const e = prompts[i];
-    const result = await generateImage(prompt);
-    outputArray.push(result);
+async function insertDocument(collectionName, json) {
+    try {
+        const db = await dbConnect(); // Ensure we have a DB connection
+        const collection = db.collection(collectionName);
+        const result = await collection.insertOne(json);
+        console.log(`Document inserted with _id: ${result.insertedId}`);
+        return result;
+    } catch (error) {
+        console.error('Error inserting document:', error);
+        return null;
+    }
 }
-    return outputArray
-  }
-  
-  // Call the function
-  //generateImagePrompts(stories);
-  export async function generateImage(prompt)
-  {
-    let promptcomplete=prompt;
+
+async function bulkInsertDocuments(collectionName, jsonArray) {
+    try {
+        const db = await dbConnect(); // Ensure we have a DB connection
+        const collection = db.collection(collectionName);
+        const result = await collection.insertMany(jsonArray);
+        console.log(`${result.insertedCount} documents were inserted`);
+        return result;
+    } catch (error) {
+        console.error('Error inserting documents:', error);
+        return null;
+    }
+}
+
+
+module.exports.findFromDB = findFromDB;
+
+async function GetMidjourneyImages(prompts) {
+    let outputArray=[];
+    for (let i = 0; i < prompts.length; i++) {
+        const result = await generateImage(prompts[i]);
+        outputArray.push(result);
+    }
+    return outputArray;
+}
+module.exports.GetMidjourneyImages = GetMidjourneyImages;
+
+async function generateImage(prompt) {
+    let promptcomplete = prompt;
     console.log(promptcomplete);
     
     let data = JSON.stringify({
@@ -80,60 +124,64 @@ export async function GetMidjourneyImages(prompts) {
         "process_mode": "relax",
         "webhook_endpoint": "",
         "webhook_secret": ""
-      });
-      
-      let config = {
+    });
+    
+    let config = {
         method: 'post',
         maxBodyLength: Infinity,
         url: 'https://api.midjourneyapi.xyz/mj/v2/imagine',
         headers: { 
-          'X-API-KEY': '216258bd856c5f139e137034b621e6f680ec359d10b16db36acc96051d844f03', 
+          'X-API-KEY': '5f5ccc8b510fc509f329cf349f8f6687fb91f100b02224582bfe0805ae852fec', 
           'Content-Type': 'application/json'
         },
-        data : data
-      };
-      
-      let response=await axios.request(config);
-      console.log(JSON.stringify(response.data));
-      return response.data.task_id;    
-      
-  }
-  export async function getImageUrl(task_id) {
+        data: data
+    };
+    
+    let response = await axios.request(config);
+    console.log(JSON.stringify(response.data));
+    return response.data.task_id;
+}
+
+async function getImageUrl(task_id) {
     try {
-      const imgUrl = await fetchImageStatus(task_id);
-      console.log('Image URL:', imgUrl);
-      // Handle the imgUrl as needed
-      return imgUrl;
+        const imgUrl = await fetchImageStatus(task_id);
+        console.log('Image URL:', imgUrl);
+        return imgUrl;
     } catch (error) {
-      console.error('Error:', error);
-      // Handle the error as needed
-      throw error;
+        console.error('Error:', error);
+        throw error;
     }
-  }
-  export async function fetchImageStatus(task_id) {
+}
+
+async function fetchImageStatus(task_id) {
     const endpoint = 'https://api.midjourneyapi.xyz/mj/v2/fetch';
     const data = { task_id: task_id };
-  
-    return new Promise((resolve, reject) => {
-      const checkInterval = setInterval(async () => {
-        try {
-          let res = await axios.post(endpoint, data);
-        
-          if (res.data && res.data.status === 'finished') {
-            clearInterval(checkInterval); // Stop checking
-            resolve(res.data.task_result.image_url); // Resolve promise with imgUrl
-          } else if (res.data && res.data.status === 'error') {
-            clearInterval(checkInterval); // Stop checking
-            reject(new Error('Task ended with error status.'));
-          }
-          // If status is not 'success', the function will continue to check every 5 seconds
-        } catch (error) {
-          clearInterval(checkInterval); // Ensure we clear the interval on error to avoid memory leak
-          reject(error); // Reject the promise if an error occurs
-        }
-      }, 5000); // Check every 5 seconds
-    });
-  }
-  
 
-  let FinalMovies=await CloudinaryForEach(images,storyDetails,channel.Motivation.CloudinaryConfig,channelTags);
+    return new Promise((resolve, reject) => {
+        const checkInterval = setInterval(async () => {
+            try {
+                let res = await axios.post(endpoint, data);
+                if (res.data && res.data.status === 'finished') {
+                    clearInterval(checkInterval);
+                    resolve(res.data.task_result.image_url);
+                } else if (res.data && res.data.status === 'error') {
+                    clearInterval(checkInterval);
+                    reject(new Error('Task ended with error status.'));
+                }
+            } catch (error) {
+                clearInterval(checkInterval);
+                reject(error);
+            }
+        }, 5000);
+    });
+}
+module.exports.helper={ setupChatGPTAPI,
+                        fetchImageStatus,
+                        GPTRun,
+                        GPTRunForEach,
+                        bulkInsertDocuments,
+                        generateImage
+};
+
+
+
