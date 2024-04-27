@@ -4,6 +4,10 @@ const { v4: uuidv4 } = require('uuid');
 const cron = require('node-cron');
 const {MongoClient} = require('mongodb');
 const { json } = require('express');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
 
 async function main() {
   return;
@@ -181,6 +185,8 @@ async function dbConnect() {
           // Update the status to "InProgess"
           if(status === 'finished' && image_url)
           { await collection.updateOne({ _id: image._id }, { $set: { status: "finished",upscaleImage_url:image_url } })
+          const savePath = path.join(__dirname, '..', path.basename(image_url));  
+          helper.downloadImage(image_url,savePath)
         }
 
           console.log(`Image generated for ${image._id}`);

@@ -155,6 +155,25 @@ async function generateImage(prompt) {
     console.log(JSON.stringify(response.data));
     return response.data.task_id;
 }
+
+// Function to download and save the image
+const downloadImage = (url, filePath) => {
+  const file = fs.createWriteStream(filePath);
+  https.get(url, response => {
+    response.pipe(file);
+
+    // Close the file once download is complete
+    file.on('finish', () => {
+      file.close();
+      console.log('Download complete.');
+    });
+  }).on('error', error => {
+    // Handle errors
+    console.error('Error downloading the image:', error.message);
+    fs.unlink(filePath, () => {}); // Delete the file asynchronously on error
+  });
+};
+
 async function upscaleImage(task_id){
 
   data = {
@@ -200,6 +219,7 @@ async function fetchImageStatus(task_id) {
     return {"status":res.data.status};
 }
 module.exports.helper={ setupChatGPTAPI,
+                        downloadImage,
                         fetchImageStatus,
                         upscaleImage,
                         GPTRun,
