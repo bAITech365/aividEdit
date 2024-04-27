@@ -43,10 +43,12 @@
     "body-parser": "^1.20.2",
     "express": "^4.19.2",
     "fluent-ffmpeg": "^2.0.0",
+    "fs": "^0.0.1-security",
     "fw": "^0.1.2",
     "lil-uuid": "^0.1.0",
     "lodash.merge": "^4.6.2",
     "multer": "^1.4.5-lts.1",
+    "node-fetch": "^3.3.2",
     "videoshow": "^0.1.12",
     "yargs": "^3.5.4"
   },

@@ -1,4 +1,6 @@
 var videoshow = require('../')
+const ffmpeg = require('fluent-ffmpeg');
+
 
 var audio = __dirname + '/../test/fixtures/song.mp3'
 var subtitles = __dirname + '/../test/fixtures/subtitles.ass'
@@ -38,5 +40,20 @@ videoshow(images, options)
     console.error('Error:', err)
   })
   .on('end', function (output) {
-    console.log('Video created in:', output)
+    console.log('Video created in:', output);
+
+ffmpeg()
+.input(__dirname + '/../video.mp4')
+.input(__dirname + '/../speaking.mp3')
+.complexFilter([
+  '[0:a][1:a]amix=inputs=2:duration=longest'
+])
+.videoCodec('copy') // Copy the video stream to avoid re-encoding
+.save('output.mp4')
+.on('error', function(err) {
+  console.log('Error: ' + err.message);
+})
+.on('end', function() {
+  console.log('Processing finished !');
+});
   })
