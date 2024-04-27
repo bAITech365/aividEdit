@@ -20,3 +20,46 @@ applies the audio mixing filter, and saves the
 3
 00:00:09,564 --> 00:00:11,984
 output without re encoding the video.
+1
+00:00:02,800 --> 00:00:03,620
+This script
+
+2
+00:00:03,760 --> 00:00:04,319
+loads the
+
+3
+00:00:04,319 --> 00:00:05,200
+video and
+
+4
+00:00:05,200 --> 00:00:06,180
+audio files,
+
+5
+00:00:06,399 --> 00:00:07,200
+applies the
+
+6
+00:00:07,200 --> 00:00:08,000
+audio mixing
+
+7
+00:00:08,000 --> 00:00:08,924
+filter, and
+
+8
+00:00:08,924 --> 00:00:09,564
+saves the
+
+9
+00:00:09,564 --> 00:00:10,524
+output without
+
+10
+00:00:10,524 --> 00:00:11,324
+re encoding
+
+11
+00:00:11,324 --> 00:00:11,984
+the video.

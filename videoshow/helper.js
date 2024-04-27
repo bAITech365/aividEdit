@@ -25,12 +25,12 @@ async function generateVoice(text) {
   };
 
   try {
-    const filePath = 'output.mp3';
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/y1adqrqs4jNaANXsIZnD', options);
-    const buffer = await response.arrayBuffer();
-    const data = Buffer.from(buffer);
-    fs.writeFileSync(filePath, data);
-    console.log('MP3 file has been saved.');
+     const filePath = 'output.mp3';
+    // const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/y1adqrqs4jNaANXsIZnD', options);
+    // const buffer = await response.arrayBuffer();
+    // const data = Buffer.from(buffer);
+    // fs.writeFileSync(filePath, data);
+    // console.log('MP3 file has been saved.');
 
     // const audioData = fs.readFileSync(filePath);
     console.log('deepgram');   
@@ -48,10 +48,10 @@ async function generateVoice(text) {
       if (!error) 
       {
          const stream = fs.createWriteStream("output.srt", { flags: "a" });
-         const captions = srt(result);
+         const captions = srt(result,2);
          console.log(captions);
          stream.write(captions);
-        // stream.end();
+         stream.end();
       }
 
 
