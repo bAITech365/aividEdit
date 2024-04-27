@@ -10,10 +10,10 @@ const path = require('path');
 
 
 async function main() {
-  return;
+  //return;
     try {
       //  console.log(channel.Motivation.GetStoriesList);
-        let stories=[];// await helper.GPTRun(channel.Motivation.GetStoriesList);
+        let stories=await helper.GPTRun(channel.Motivation.GetStoriesList);
         // let stories=await JSON.parse(result);
           console.log('stories',stories);
   //      console.log(result);
@@ -144,7 +144,6 @@ async function dbConnect() {
       const notStartedImages = await collection.find({ status: "Notstarted" }).limit(2).toArray();
       const inProgressImages = await collection.find({ status: "InProgess" }).limit(2).toArray();
       const upscalePendingImages = await collection.find({ status: "upscalePending" }).limit(2).toArray();
-
       // Process each image 
    
       for (const image of notStartedImages) {
@@ -185,8 +184,7 @@ async function dbConnect() {
           // Update the status to "InProgess"
           if(status === 'finished' && image_url)
           { await collection.updateOne({ _id: image._id }, { $set: { status: "finished",upscaleImage_url:image_url } })
-          const savePath = path.join(__dirname, '..', path.basename(image_url));  
-          helper.downloadImage(image_url,savePath)
+         
         }
 
           console.log(`Image generated for ${image._id}`);
