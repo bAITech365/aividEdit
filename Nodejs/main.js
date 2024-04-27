@@ -395,11 +395,15 @@ async function main() {
 }
 
 cron.schedule('*/5 * * * * *', async () => {
+  console.log(`
+  
+  
+  `);
   console.log('Running cron job...' ,new Date());
   try {
 
     const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
-let client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+let client = new MongoClient(uri);
 async function dbConnect() {
   if (!client) {
     client = await MongoClient.connect(uri);
@@ -411,15 +415,16 @@ async function dbConnect() {
 
       // Find documents with status "Notstarted"
       const notStartedImages = await collection.find({ status: "Notstartedv" }).limit(2).toArray();
+      const inProgressImages = await collection.find({ status: "InProgessv" }).limit(2).toArray();
+      const upscalePendingImages = await collection.find({ status: "upscalePending" }).limit(2).toArray();
 
       // Process each image 
    
       for (const image of notStartedImages) {
         //await waitRandom(5000);
-          console.log(`Generating image for ${image._id}...`);
-          // Generate the image
-          console.log('generateimage');
-          const task_id = await helper.generateImage(image);
+          const prompt = image.prompt;
+          console.log(`Generating image for ${image._id} ..  ${prompt}...`);
+          const task_id = await helper.generateImage(prompt);
           console.log(task_id);
           // Update the status to "InProgess"
           if(task_id)
@@ -427,6 +432,37 @@ async function dbConnect() {
 
           console.log(`Image generated for ${image._id}`);
       }
+      for (const image of inProgressImages) {
+        //await waitRandom(5000);
+          const task_id = image.task_id;
+          console.log(`checking image inprogress for ${image._id} ..  ${task_id}...`);
+          const {status,image_url} = await helper.fetchImageStatus(task_id);
+          console.log(status,image_url);
+          // Update the status to "InProgess"
+          if(status === 'finished' && image_url)
+          { await collection.updateOne({ _id: image._id }, { $set: { status: "upscalePending",image_url:image_url } });
+            const upscaleTaskId= await helper.upscaleImage(task_id);
+            await collection.updateOne({ _id: image._id }, { $set: { status: "upscalePending",upscaleTaskId:upscaleTaskId } });
+        
+        }
+
+          console.log(`Image generated for ${image._id}`);
+      }
+      for (const image of upscalePendingImages) {
+        //await waitRandom(5000);
+          const task_id = image.upscaleTaskId;
+          console.log(`checking upscale image for ${image._id} ..  ${task_id}...`);
+          const {status,image_url} = await helper.fetchImageStatus(task_id);
+          
+          console.log(status,image_url);
+          // Update the status to "InProgess"
+          if(status === 'finished' && image_url)
+          { await collection.updateOne({ _id: image._id }, { $set: { status: "finished",upscaleImage_url:image_url } })
+        }
+
+          console.log(`Image generated for ${image._id}`);
+      }
+
   } catch (error) {
       console.error('Error in cron job:', error);
   }

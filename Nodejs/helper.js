@@ -51,7 +51,7 @@ function convertMarkdownToJsonArray(markdownString) {
 
 const openai = new OpenAI();
 const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
-let client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+let client = new MongoClient(uri);
 async function dbConnect() {
   if (!client) {
     client = await MongoClient.connect(uri);
@@ -141,7 +141,30 @@ async function generateImage(prompt) {
     console.log(JSON.stringify(response.data));
     return response.data.task_id;
 }
+async function upscaleImage(task_id){
 
+  data = {
+    "origin_task_id": task_id,
+    "index": "1",
+    "webhook_endpoint": "",
+    "webhook_secret": ""
+}
+
+let config = {
+  method: 'post',
+  maxBodyLength: Infinity,
+  url: 'https://api.midjourneyapi.xyz/mj/v2/upscale',
+  headers: { 
+    'X-API-KEY': '5f5ccc8b510fc509f329cf349f8f6687fb91f100b02224582bfe0805ae852fec', 
+    'Content-Type': 'application/json'
+  },
+  data: data
+};
+
+let response = await axios.request(config);
+console.log(JSON.stringify(response.data));
+return response.data.task_id;
+}
 async function getImageUrl(task_id) {
     try {
         const imgUrl = await fetchImageStatus(task_id);
@@ -156,27 +179,15 @@ async function getImageUrl(task_id) {
 async function fetchImageStatus(task_id) {
     const endpoint = 'https://api.midjourneyapi.xyz/mj/v2/fetch';
     const data = { task_id: task_id };
-
-    return new Promise((resolve, reject) => {
-        const checkInterval = setInterval(async () => {
-            try {
-                let res = await axios.post(endpoint, data);
-                if (res.data && res.data.status === 'finished') {
-                    clearInterval(checkInterval);
-                    resolve(res.data.task_result.image_url);
-                } else if (res.data && res.data.status === 'error') {
-                    clearInterval(checkInterval);
-                    reject(new Error('Task ended with error status.'));
-                }
-            } catch (error) {
-                clearInterval(checkInterval);
-                reject(error);
-            }
-        }, 5000);
-    });
+    let res = await axios.post(endpoint, data);
+    if (res.data && res.data.status === 'finished') {
+     return {"status":res.data.status,"image_url": res.data.task_result.image_url};
+    }
+    return {"status":res.data.status};
 }
 module.exports.helper={ setupChatGPTAPI,
                         fetchImageStatus,
+                        upscaleImage,
                         GPTRun,
                         GPTRunForEach,
                         bulkInsertDocuments,
