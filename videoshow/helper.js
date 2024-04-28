@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const { createClient, srt } = require('@deepgram/sdk');
 const deepgram = createClient('a7056d8828505c8de14a6210f133bcdb1efc21f2');
 
@@ -25,33 +26,38 @@ async function generateVoice(text) {
   };
 
   try {
-     const filePath = 'output.mp3';
+    const timestamp = new Date().toISOString().replace(/:/g, '-'); // Generate timestamp
+    const folderPath = path.join(__dirname, 'audio_and_srt'); // Folder path
+    const audioFilePath = path.join(folderPath, `output_${timestamp}.mp3`); // Unique audio filename with timestamp
     const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/y1adqrqs4jNaANXsIZnD', options);
     const buffer = await response.arrayBuffer();
     const data = Buffer.from(buffer);
-    fs.writeFileSync(filePath, data);
+    fs.mkdirSync(folderPath, { recursive: true }); // Create the folder if it doesn't exist
+    fs.writeFileSync(audioFilePath, data);
     console.log('MP3 file has been saved.');
 
-    const audioData = fs.readFileSync(filePath);
-    console.log('deepgram');   
+    const audioData = fs.readFileSync(audioFilePath);
+    console.log('Transcribing audio using Deepgram...');  
 
     const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
-        fs.readFileSync(filePath),
-        {
-          model: "nova-2",
-          smart_format: true,
-          utterances: true
-        },
-      );
+      fs.readFileSync(audioFilePath),
+      {
+        model: "nova-2",
+        smart_format: true,
+        utterances: true
+      },
+    );
 
       if (error) throw error;
       if (!error) 
       {
-         const stream = fs.createWriteStream("output.srt", { flags: "a" });
-         const captions = srt(result,1); //srt of 1 word in the file
-         console.log(captions);
-         stream.write(captions);
-         stream.end();
+        const captionsFilePath = path.join(folderPath, `output_${timestamp}.srt`); // Unique captions filename with timestamp
+        const stream = fs.createWriteStream(captionsFilePath, { flags: "a" });
+        const captions = srt(result, 1); // SRT of 1 word in the file
+        console.log('Captions:', captions);
+        stream.write(captions);
+        stream.end();
+        console.log('Captions file has been saved:', captionsFilePath);
       }
 
 
@@ -67,7 +73,7 @@ async function generateVoice(text) {
 
 
 
-// generateVoice('This script loads the video and audio files, applies the audio mixing filter, and saves the output without re-encoding the video.');
+// generateVoice("The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle");
 
 module.exports = {
   generateVoice: generateVoice

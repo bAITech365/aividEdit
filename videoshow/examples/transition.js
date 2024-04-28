@@ -3,7 +3,7 @@ const ffmpeg = require('fluent-ffmpeg');
 
 
 var audio = __dirname + '/../test/fixtures/song.mp3'
-var subtitles = __dirname + '/../test/fixtures/subtitles.ass'
+var subtitles = __dirname + '/../test/fixtures/subtitles.srt'
 
 var options = {
   transition: true
