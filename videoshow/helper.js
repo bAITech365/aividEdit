@@ -67,4 +67,8 @@ async function generateVoice(text) {
 
 
 
-generateVoice('This script loads the video and audio files, applies the audio mixing filter, and saves the output without re-encoding the video.');
+// generateVoice('This script loads the video and audio files, applies the audio mixing filter, and saves the output without re-encoding the video.');
+
+module.exports = {
+  generateVoice: generateVoice
+};
