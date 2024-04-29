@@ -5,6 +5,7 @@ const path = require('path');
 const { MongoClient } = require('mongodb');
 const { generateVoice  } = require('../videoshow/helper');
 const { createVideoWithGeneratedFiles } = require('../videoshow/examples/transition');
+const concatenateVideos = require('../videoshow/examples/concat');
 
 
 const imagesDir = path.join(__dirname, '..', 'videoshow', 'examples');
@@ -106,8 +107,10 @@ console.log('Downloaded images:', imageFileNames);
     ]
     try {
       // const generatedFiles = await getAllMidjourneyData();
-      createVideoWithGeneratedFiles(generatedFiles);
+    //  await createVideoWithGeneratedFiles(generatedFiles);
+    //  console.log('All videos created and merged successfully.');
       // console.log('Midjourney data:', generatedFiles);
+      concatenateVideos();
     } catch (error) {
       console.error('Error:', error);
     }
