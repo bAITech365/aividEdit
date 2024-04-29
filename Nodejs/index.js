@@ -79,29 +79,29 @@ console.log('Downloaded images:', imageFileNames);
   async function test() {
    const generatedFiles = [
       {
-        audio: 'output_2024-04-29T07-15-49.035Z.mp3',
-        captions: 'output_2024-04-29T07-15-49.035Z.srt',
-        image: 'image_1.jpg'
+        audio: '/output_2024-04-29T07-15-49.035Z.mp3',
+        captions: '/output_2024-04-29T07-15-49.035Z.srt',
+        image: '/image_1.jpg'
       },
       {
-        audio: 'output_2024-04-29T07-15-52.227Z.mp3',
-        captions: 'output_2024-04-29T07-15-52.227Z.srt',
-        image: 'image_2.jpg'
+        audio: '/output_2024-04-29T07-15-52.227Z.mp3',
+        captions: '/output_2024-04-29T07-15-52.227Z.srt',
+        image: '/image_2.jpg'
       },
       {
-        audio: 'output_2024-04-29T07-16-00.643Z.mp3',
-        captions: 'output_2024-04-29T07-16-00.643Z.srt',
-        image: 'image_3.jpg'
+        audio: '/output_2024-04-29T07-16-00.643Z.mp3',
+        captions: '/output_2024-04-29T07-16-00.643Z.srt',
+        image: '/image_3.jpg'
       },
       {
-        audio: 'output_2024-04-29T07-16-12.524Z.mp3',
-        captions: 'output_2024-04-29T07-16-12.524Z.srt',
-        image: 'image_4.jpg'
+        audio: '/output_2024-04-29T07-16-12.524Z.mp3',
+        captions: '/output_2024-04-29T07-16-12.524Z.srt',
+        image: '/image_4.jpg'
       },
       {
-        audio: 'output_2024-04-29T07-16-19.631Z.mp3',
-        captions: 'output_2024-04-29T07-16-19.631Z.srt',
-        image: 'image_5.jpg'
+        audio: '/output_2024-04-29T07-16-19.631Z.mp3',
+        captions: '/output_2024-04-29T07-16-19.631Z.srt',
+        image: '/image_5.jpg'
       }
     ]
     try {
