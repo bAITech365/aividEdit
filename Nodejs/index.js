@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { MongoClient } = require('mongodb');
 const { generateVoice  } = require('../videoshow/helper');
+const { createVideoWithGeneratedFiles } = require('../videoshow/examples/transition');
 
 
 const imagesDir = path.join(__dirname, '..', 'videoshow', 'examples');
@@ -60,13 +61,13 @@ console.log('Downloaded images:', imageFileNames);
             const { audio, captions } = await generateVoice(quote);
             if (audio && captions) {
                 generatedFiles.push({ audio, captions, image: imageFileNames[i] });
-                console.log(`Voice generated for quote: ${quote}`);
+                // console.log(`Voice generated for quote: ${quote}`);
             } else {
                 console.log(`Error generating voice for quote: ${quote}`);
             }
         }
 
-        console.log('Generated files:', generatedFiles);
+        return generatedFiles;
   } catch (error) {
       console.error('Error generating voice:', error);
   }
@@ -76,9 +77,37 @@ console.log('Downloaded images:', imageFileNames);
   
   // Usage example
   async function test() {
+   const generatedFiles = [
+      {
+        audio: 'output_2024-04-29T07-15-49.035Z.mp3',
+        captions: 'output_2024-04-29T07-15-49.035Z.srt',
+        image: 'image_1.jpg'
+      },
+      {
+        audio: 'output_2024-04-29T07-15-52.227Z.mp3',
+        captions: 'output_2024-04-29T07-15-52.227Z.srt',
+        image: 'image_2.jpg'
+      },
+      {
+        audio: 'output_2024-04-29T07-16-00.643Z.mp3',
+        captions: 'output_2024-04-29T07-16-00.643Z.srt',
+        image: 'image_3.jpg'
+      },
+      {
+        audio: 'output_2024-04-29T07-16-12.524Z.mp3',
+        captions: 'output_2024-04-29T07-16-12.524Z.srt',
+        image: 'image_4.jpg'
+      },
+      {
+        audio: 'output_2024-04-29T07-16-19.631Z.mp3',
+        captions: 'output_2024-04-29T07-16-19.631Z.srt',
+        image: 'image_5.jpg'
+      }
+    ]
     try {
-      const midjourneyData = await getAllMidjourneyData();
-      console.log('Midjourney data:', midjourneyData);
+      // const generatedFiles = await getAllMidjourneyData();
+      createVideoWithGeneratedFiles(generatedFiles);
+      // console.log('Midjourney data:', generatedFiles);
     } catch (error) {
       console.error('Error:', error);
     }
