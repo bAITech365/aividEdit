@@ -133,9 +133,47 @@ documents.forEach(doc => {
     quotes.push(doc.quote);
 });
 
-console.log('Images:', images);
-console.log('Quotes:', quotes);
+// console.log('Images:', images);
+// console.log('Quotes:', quotes);
       client.close();
+      const imageFileNames = [];
+
+// Function to download an image
+async function downloadImage(url, index) {
+  const imageFilename = `image_${index + 1}.jpg`;
+  const imagePath = path.join(imagesDir, imageFilename);
+  const response = await fetch(url);
+  const buffer = await response.arrayBuffer();
+  fs.writeFileSync(imagePath, Buffer.from(buffer));
+  // console.log(`Downloaded image ${imageFilename}`);
+  imageFileNames.push(imageFilename);
+}
+
+// Loop through the images array and download each image
+for (let i = 0; i < images.length; i++) {
+  await downloadImage(images[i], i);
+}
+// console.log(imageFileNames)
+const generatedFiles = [];
+// Function to generate voice for each quote
+async function generateVoiceForQuotes() {
+  try {
+      for (const quote of quotes) {
+          const { audio, captions } = await generateVoice(quote);
+          if (audio && captions) {
+              generatedFiles.push({ audio, captions });
+              console.log(`Voice generated for quote: ${quote}`);
+          } else {
+              console.log(`Error generating voice for quote: ${quote}`);
+          }
+      }
+      console.log('Generated files:', generatedFiles);
+  } catch (error) {
+      console.error('Error generating voice:', error);
+  }
+}
+// Call the function to generate voice for each quote
+generateVoiceForQuotes();
 
       // let fileNames = {
       //     images: [],
