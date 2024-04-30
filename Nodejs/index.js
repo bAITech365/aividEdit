@@ -13,6 +13,13 @@ require("dotenv").config();
 // const ffmpeg = require('@ffmpeg-installer/ffmpeg');
 const ffmpeg = require('fluent-ffmpeg');
 
+cloudinary.config({ 
+  cloud_name: 'dj3qabx11', 
+  api_key: '533762782692462', 
+  api_secret: 'YcvSAvEFsEu-rZyhKmLnI3bQ5KQ'
+});
+
+
 const cors = require('cors');
 
 const app = express();
@@ -189,7 +196,7 @@ async function uploadVideoToCloudinary(videoFilePath) {
     });
 
     // Log the result (optional)
-    console.log('Upload result:', result);
+    // console.log('Upload result:', result);
 
     return result.secure_url; // Return the secure URL of the uploaded video
   } catch (error) {
@@ -222,63 +229,73 @@ async function uploadVideoLinkToMongoDB(videoLink) {
 
   // Usage example
   async function test() {
-  const generatedFiles = [
-    {
-      audio: 'output_2024-04-30T04-54-22.183Z.mp3',
-      captions: 'output_2024-04-30T04-54-22.183Z.srt',
-      image: 'image_1.jpg',
-      duration: 2.533875
-    },
-    {
-      audio: 'output_2024-04-30T04-54-25.574Z.mp3',
-      captions: 'output_2024-04-30T04-54-25.574Z.srt',
-      image: 'image_2.jpg',
-      duration: 10.762438
-    },
-    {
-      audio: 'output_2024-04-30T04-54-34.664Z.mp3',
-      captions: 'output_2024-04-30T04-54-34.664Z.srt',
-      image: 'image_3.jpg',
-      duration: 12.852188
-    },
-    {
-      audio: 'output_2024-04-30T04-54-45.091Z.mp3',
-      captions: 'output_2024-04-30T04-54-45.091Z.srt',
-      image: 'image_4.jpg',
-      duration: 4.623625
-    },
-    {
-      audio: 'output_2024-04-30T04-54-49.328Z.mp3',
-      captions: 'output_2024-04-30T04-54-49.328Z.srt',
-      image: 'image_5.jpg',
-      duration: 12.773875
-    }
-  ]
+  // const generatedFiles = [
+  //   {
+  //     audio: 'output_2024-04-30T04-54-22.183Z.mp3',
+  //     captions: 'output_2024-04-30T04-54-22.183Z.srt',
+  //     image: 'image_1.jpg',
+  //     duration: 2.533875
+  //   },
+  //   {
+  //     audio: 'output_2024-04-30T04-54-25.574Z.mp3',
+  //     captions: 'output_2024-04-30T04-54-25.574Z.srt',
+  //     image: 'image_2.jpg',
+  //     duration: 10.762438
+  //   },
+  //   {
+  //     audio: 'output_2024-04-30T04-54-34.664Z.mp3',
+  //     captions: 'output_2024-04-30T04-54-34.664Z.srt',
+  //     image: 'image_3.jpg',
+  //     duration: 12.852188
+  //   },
+  //   {
+  //     audio: 'output_2024-04-30T04-54-45.091Z.mp3',
+  //     captions: 'output_2024-04-30T04-54-45.091Z.srt',
+  //     image: 'image_4.jpg',
+  //     duration: 4.623625
+  //   },
+  //   {
+  //     audio: 'output_2024-04-30T04-54-49.328Z.mp3',
+  //     captions: 'output_2024-04-30T04-54-49.328Z.srt',
+  //     image: 'image_5.jpg',
+  //     duration: 12.773875
+  //   }
+  // ]
   const videoFilePath = path.join(__dirname, 'concatFile.mp4');
+  let cloudinaryLink;
     try {
+      
       // getting images and quotes from database and creating audio with the quotes
-      // const generatedFiles = await getAllMidjourneyData();
+      const generatedFiles = await getAllMidjourneyData();
+
       // creating video for each quote along with subtitle
-    //  await createVideoWithGeneratedFiles(generatedFiles);
+     await createVideoWithGeneratedFiles(generatedFiles);
      console.log('All videos created and merged successfully.');
     
       // console.log('Midjourney data:', generatedFiles);
+
       // concatenate all the videos to make a single video
+
       // await concatenateVideos();
-      console.log('Concatenation done for video')
-      console.log(videoFilePath)
+      
+      // console.log('Concatenation done for video')
+      // console.log(videoFilePath)
+
       // uploading the video in cloudinary
 
-  //     uploadVideoToCloudinary(videoFilePath)
-  // .then(uploadedVideoUrl => {
-  //   console.log('Video uploaded to Cloudinary:', uploadedVideoUrl);
-  // })
-  // .catch(error => {
-  //   console.error('Error uploading video:', error);
-  // });
+      await uploadVideoToCloudinary(videoFilePath)
+  .then(uploadedVideoUrl => {
+    cloudinaryLink = uploadedVideoUrl
+    console.log('Video uploaded to Cloudinary:', uploadedVideoUrl);
+  })
+  .catch(error => {
+    console.error('Error uploading video:', error);
+  });
+
+  console.log('cludl link', cloudinaryLink)
 
       // Saving uploaded video link to the database.
-      await uploadVideoLinkToMongoDB(videoFilePath)
+      await uploadVideoLinkToMongoDB(cloudinaryLink)
       console.log('video file link upload complete.')
 
     } catch (error) {
