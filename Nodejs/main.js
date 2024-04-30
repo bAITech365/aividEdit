@@ -7,7 +7,29 @@ const { json } = require('express');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { google } = require("googleapis");
+require("dotenv").config();
+const axios = require('axios');
 
+const oAuth2Client = new google.auth.OAuth2()
+
+
+// Function to download video from cloudinary
+async function downloadVideo(url, outputPath) {
+  const response = await axios({
+    url,
+    method: 'GET',
+    responseType: 'stream'
+  });
+  const writer = fs.createWriteStream(outputPath);
+
+  response.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on('finish', resolve);
+    writer.on('error', reject);
+  });
+}
 
 async function main() {
   //return;
@@ -121,6 +143,64 @@ async function main() {
     }
 }
 
+
+
+
+// cron job for uploading video to the youtube
+cron.schedule('*/30 * * * * *', async () => {
+  console.log('Running cron job...' ,new Date());
+  try {
+    const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
+let client = new MongoClient(uri);
+async function dbConnect() {
+  if (!client) {
+    client = await MongoClient.connect(uri);
+  }
+  return client.db();
+}
+      const db = await dbConnect();
+      const collection = db.collection('FinalVideo');
+  // Find documents with status "completed"
+  const notUploadedVideo = await collection.find({ status: "completed" }).limit(2).toArray();
+
+  for (const video of notUploadedVideo ){
+    const { title, description, videoLink } = video;
+    const localPath = path.join(__dirname, `downloaded-${Date.now()}.mp4`);
+    await downloadVideo(videoLink, localPath);
+  try {
+    const youtube = google.youtube({ version: "v3", auth: oAuth2Client });
+    const response = await youtube.videos.insert({
+      part: "snippet,contentDetails,status",
+      requestBody: {
+        snippet: {
+         title,
+         description,
+          tags: ["Node.js", "API Upload"],
+        },
+        status: {
+          privacyStatus: "public",
+        },
+      },
+      media: {
+        body: fs.createReadStream(localPath),
+      },
+    });
+
+    
+    console.log('youtube response', response)
+  } catch (error) {
+    console.error("Error uploading video:", error);
+  }finally{
+    fs.unlinkSync(localPath);
+  }
+  }
+
+  } catch (error) {
+    console.error('Error in uploading youtube video cron job:', error);
+  }
+});
+
+// cron job for image generation
 cron.schedule('*/20 * * * * *', async () => {
   console.log(`
   
