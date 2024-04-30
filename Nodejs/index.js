@@ -10,6 +10,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const { google } = require("googleapis");
 require("dotenv").config();
+// const ffmpeg = require('@ffmpeg-installer/ffmpeg');
+const ffmpeg = require('fluent-ffmpeg');
 
 const cors = require('cors');
 
@@ -93,6 +95,20 @@ if (!fs.existsSync(imagesDir)){
 }
 
 
+// Function to calculate audio duration
+async function getAudioDuration(filePath) {
+  return new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(filePath, (err, metadata) => {
+          if (err) {
+              reject(err);
+          } else {
+              const duration = metadata.format.duration;
+              resolve(duration);
+          }
+      });
+  });
+}
+
 async function getAllMidjourneyData() {
   try {
       const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
@@ -102,20 +118,22 @@ async function getAllMidjourneyData() {
       const db = client.db();
       const collection = db.collection('MidjourneyImages');
       const topic = 'Motivation';
-      const documents = await collection.find({ topic: topic }).project({ _id: 0, image_url: 1, quote: 1 }).limit(5).toArray();
+      const documents = await collection.find({ topic: topic }).project({ _id: 0, upscaleImage_url: 1, quote: 1 }).limit(5).toArray();
+      
+      // console.log(documents)
 
 const images = [];
 const quotes = [];
 
 documents.forEach(doc => {
-    images.push(doc.image_url);
+    images.push(doc.upscaleImage_url);
     quotes.push(doc.quote);
 });
 
-      client.close();
+      // client.close();
       const imageFileNames = [];
 
-// Function to download an image
+// // Function to download an image
 async function downloadImage(url, index) {
   const imageFilename = `image_${index + 1}.jpg`;
   const imagePath = path.join(imagesDir, imageFilename);
@@ -138,8 +156,16 @@ console.log('Downloaded images:', imageFileNames);
             const quote = quotes[i];
             const { audio, captions } = await generateVoice(quote);
             if (audio && captions) {
-                generatedFiles.push({ audio, captions, image: imageFileNames[i] });
-                // console.log(`Voice generated for quote: ${quote}`);
+              const audioDir = path.join(__dirname, '..', 'videoshow', 'examples');
+        const audioPath = path.join(audioDir, audio);
+
+        // Calculate audio duration for each audio file
+        const audioDuration = await getAudioDuration(audioPath);
+
+        // Add the audio duration to the generatedFiles array
+        generatedFiles.push({ audio, captions, image: imageFileNames[i], duration: audioDuration });
+
+        console.log(`Voice generated for quote: ${quote}`);
             } else {
                 console.log(`Error generating voice for quote: ${quote}`);
             }
@@ -155,39 +181,44 @@ console.log('Generated file from database', generatedFiles)
   
   // Usage example
   async function test() {
-  //  const generatedFiles = [
-  //     {
-  //       audio: '/output_2024-04-29T07-15-49.035Z.mp3',
-  //       captions: '/output_2024-04-29T07-15-49.035Z.srt',
-  //       image: '/image_1.jpg'
-  //     },
-  //     {
-  //       audio: '/output_2024-04-29T07-15-52.227Z.mp3',
-  //       captions: '/output_2024-04-29T07-15-52.227Z.srt',
-  //       image: '/image_2.jpg'
-  //     },
-  //     {
-  //       audio: '/output_2024-04-29T07-16-00.643Z.mp3',
-  //       captions: '/output_2024-04-29T07-16-00.643Z.srt',
-  //       image: '/image_3.jpg'
-  //     },
-  //     {
-  //       audio: '/output_2024-04-29T07-16-12.524Z.mp3',
-  //       captions: '/output_2024-04-29T07-16-12.524Z.srt',
-  //       image: '/image_4.jpg'
-  //     },
-  //     {
-  //       audio: '/output_2024-04-29T07-16-19.631Z.mp3',
-  //       captions: '/output_2024-04-29T07-16-19.631Z.srt',
-  //       image: '/image_5.jpg'
-  //     }
-  //   ]
+  const generatedFiles = [
+    {
+      audio: 'output_2024-04-30T04-54-22.183Z.mp3',
+      captions: 'output_2024-04-30T04-54-22.183Z.srt',
+      image: 'image_1.jpg',
+      duration: 2.533875
+    },
+    {
+      audio: 'output_2024-04-30T04-54-25.574Z.mp3',
+      captions: 'output_2024-04-30T04-54-25.574Z.srt',
+      image: 'image_2.jpg',
+      duration: 10.762438
+    },
+    {
+      audio: 'output_2024-04-30T04-54-34.664Z.mp3',
+      captions: 'output_2024-04-30T04-54-34.664Z.srt',
+      image: 'image_3.jpg',
+      duration: 12.852188
+    },
+    {
+      audio: 'output_2024-04-30T04-54-45.091Z.mp3',
+      captions: 'output_2024-04-30T04-54-45.091Z.srt',
+      image: 'image_4.jpg',
+      duration: 4.623625
+    },
+    {
+      audio: 'output_2024-04-30T04-54-49.328Z.mp3',
+      captions: 'output_2024-04-30T04-54-49.328Z.srt',
+      image: 'image_5.jpg',
+      duration: 12.773875
+    }
+  ]
     try {
-      const generatedFiles = await getAllMidjourneyData();
+      // const generatedFiles = await getAllMidjourneyData();
      await createVideoWithGeneratedFiles(generatedFiles);
      console.log('All videos created and merged successfully.');
       // console.log('Midjourney data:', generatedFiles);
-      concatenateVideos();
+      // concatenateVideos();
     } catch (error) {
       console.error('Error:', error);
     }
