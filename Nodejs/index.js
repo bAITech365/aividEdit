@@ -1,4 +1,4 @@
-
+const cloudinary = require('cloudinary').v2;
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
@@ -21,6 +21,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   headers: ['Content-Type', 'Authorization']
 }));
+cloudinary.config({
+  secure: true
+});
 
 const PORT = process.env.PORT || 5000;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -177,8 +180,46 @@ console.log('Generated file from database', generatedFiles)
   }
 }
 
+// Function to upload a video file to Cloudinary
+async function uploadVideoToCloudinary(videoFilePath) {
+  try {
+    // Upload the video file to Cloudinary
+    const result = await cloudinary.uploader.upload(videoFilePath, {
+      resource_type: "video"
+    });
 
+    // Log the result (optional)
+    console.log('Upload result:', result);
+
+    return result.secure_url; // Return the secure URL of the uploaded video
+  } catch (error) {
+    console.error('Error uploading video to Cloudinary:', error);
+    throw error; // Throw the error for handling by the caller
+  }
+}
   
+// Function to upload video link to mongodb
+
+async function uploadVideoLinkToMongoDB(videoLink) {
+  try {
+    const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
+    const client = new MongoClient(uri);
+    await client.connect();
+
+    const db = client.db();
+    const collection = db.collection('FinalVideo');
+   // Insert document with videoLink and default status
+   const result = await collection.insertOne({
+    videoLink: videoLink,
+    status: "review" // Default status
+  });
+  console.log(`Video link uploaded to MongoDB with ID: ${result.insertedId}`);
+  } catch(error) {
+    console.log(`Error uploading video link to MongoDB: ${error}`);
+  } 
+
+}
+
   // Usage example
   async function test() {
   const generatedFiles = [
@@ -213,12 +254,33 @@ console.log('Generated file from database', generatedFiles)
       duration: 12.773875
     }
   ]
+  const videoFilePath = path.join(__dirname, 'concatFile.mp4');
     try {
+      // getting images and quotes from database and creating audio with the quotes
       // const generatedFiles = await getAllMidjourneyData();
-     await createVideoWithGeneratedFiles(generatedFiles);
+      // creating video for each quote along with subtitle
+    //  await createVideoWithGeneratedFiles(generatedFiles);
      console.log('All videos created and merged successfully.');
+    
       // console.log('Midjourney data:', generatedFiles);
-      // concatenateVideos();
+      // concatenate all the videos to make a single video
+      // await concatenateVideos();
+      console.log('Concatenation done for video')
+      console.log(videoFilePath)
+      // uploading the video in cloudinary
+
+  //     uploadVideoToCloudinary(videoFilePath)
+  // .then(uploadedVideoUrl => {
+  //   console.log('Video uploaded to Cloudinary:', uploadedVideoUrl);
+  // })
+  // .catch(error => {
+  //   console.error('Error uploading video:', error);
+  // });
+
+      // Saving uploaded video link to the database.
+      await uploadVideoLinkToMongoDB(videoFilePath)
+      console.log('video file link upload complete.')
+
     } catch (error) {
       console.error('Error:', error);
     }
