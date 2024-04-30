@@ -1,7 +1,7 @@
 const { exec } = require('child_process');
 const path = require('path');
 
-function concatenateVideos() {
+async function concatenateVideos() {
   // Input video files
   const input1 = path.join(__dirname, '..', '..', 'Nodejs', 'final_1.mp4');
   const input2 = path.join(__dirname, '..', '..', 'Nodejs', 'final_2.mp4');

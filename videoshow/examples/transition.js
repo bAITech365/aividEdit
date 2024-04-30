@@ -4,9 +4,14 @@ const path = require('path');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 
+function calculateLoopDuration(audioDuration) {
+    // Assuming a loop duration of 10 seconds for every 1 second of audio
+    return Math.ceil(audioDuration);
+}
+
 async function createVideoWithGeneratedFiles(generatedFiles) {
     // Define the audio path and subtitles
-// console.log(generatedFiles)
+console.log('inside transition', generatedFiles)
 const audio = path.join(__dirname, 'song.mp3');
 
 const promises = [];
@@ -14,9 +19,12 @@ const promises = [];
 // Iterate over each dataset in generatedFiles
 for (let i = 0; i < generatedFiles.length; i++) {
     const dataset = generatedFiles[i];
-    console.log('dataset', dataset)
-    const images = [path.join(__dirname, dataset.image)]; 
-    // console.log(images)// Create an array with the current image
+    // console.log('dataset', dataset)
+    const images = [{
+        path: path.join(__dirname, dataset.image),
+        loop: calculateLoopDuration(dataset.duration)
+    }];
+    console.log(images)// Create an array with the current image
     const outputFileName = `video_${i + 1}.mp4`; // Use a sequential number for the output file name
 
     // Use the path specified in the caption property as the subtitle path
@@ -106,48 +114,48 @@ async function getAudioDuration(filePath) {
 //     const subtitles = path.join(__dirname, '..', 'test', 'fixtures', 'subtitles.ass');
 //     const outputDir = path.join(__dirname, '/');
 // console.log(generatedFiles)
-//   // Iterate over each item in the generatedFiles array
-// //   const filesWithPath = generatedFiles.map(async file => {
-// //     // Create the full path for each file
-// //     const audioPath = path.join(outputDir, file.audio);
-// //     const captionsPath = path.join(outputDir, file.captions);
-// //     const imagePath = path.join(outputDir, file.image);
+  // Iterate over each item in the generatedFiles array
+//   const filesWithPath = generatedFiles.map(async file => {
+//     // Create the full path for each file
+//     const audioPath = path.join(outputDir, file.audio);
+//     const captionsPath = path.join(outputDir, file.captions);
+//     const imagePath = path.join(outputDir, file.image);
 
-// //     // Return an object with the file name and its corresponding path
-// //     return {
-// //         audio: { name: file.audio, path: audioPath, duration: await getAudioDuration(audioPath) },
-// //         captions: { name: file.captions, path: captionsPath },
-// //         image: { name: file.image, path: imagePath, loop: Math.floor(await getAudioDuration(audioPath))},
-// //     };
-// // });
+//     // Return an object with the file name and its corresponding path
+//     return {
+//         audio: { name: file.audio, path: audioPath, duration: await getAudioDuration(audioPath) },
+//         captions: { name: file.captions, path: captionsPath },
+//         image: { name: file.image, path: imagePath, loop: Math.floor(await getAudioDuration(audioPath))},
+//     };
+// });
 
-// // // Resolve all promises and log the files with their paths and durations
+// Resolve all promises and log the files with their paths and durations
 
-// // const resolvedFiles = await Promise.all(filesWithPath);
-// // // console.log('Files with paths and durations:', resolvedFiles);
+// const resolvedFiles = await Promise.all(filesWithPath);
+// console.log('Files with paths and durations:', resolvedFiles);
 
-// // // Calculate the total duration of all audio files
-// // const totalDuration = resolvedFiles.reduce((total, file) => total + file.audio.duration, 0);
-// // console.log('Total duration of all audio files:', totalDuration);
+// Calculate the total duration of all audio files
+// const totalDuration = resolvedFiles.reduce((total, file) => total + file.audio.duration, 0);
+// console.log('Total duration of all audio files:', totalDuration);
 
 
-// // Create an array to hold the transformed data
+// Create an array to hold the transformed data
 // const transformedImages = [];
 
-// // const promiseFiles = await Promise.all(filesWithPath);
-// // console.log('Files with paths and durations:', promiseFiles);
+// const promiseFiles = await Promise.all(filesWithPath);
+// console.log('Files with paths and durations:', promiseFiles);
 
-// // Iterate over each item in resolvedFiles array
-// // promiseFiles.forEach(file => {
-// //     // console.log('File:', file); // Log the contents of the file object
-// //     // Push an object representing each image to the transformedImages array
-// //     transformedImages.push({
-// //         path: file.image.path, // Path to the image file
-// //         loop: file.image.loop // Loop count for the image
-// //     });
-// // });
-// // console.log(transformedImages)
-//     // Define the options for videoshow
+// Iterate over each item in resolvedFiles array
+// promiseFiles.forEach(file => {
+//     // console.log('File:', file); // Log the contents of the file object
+//     // Push an object representing each image to the transformedImages array
+//     transformedImages.push({
+//         path: file.image.path, // Path to the image file
+//         loop: file.image.loop // Loop count for the image
+//     });
+// });
+// console.log(transformedImages)
+    // Define the options for videoshow
 //     const options = {
 //         transition: true
 //     };
