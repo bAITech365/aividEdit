@@ -31,6 +31,45 @@ const Navbar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+
+
+  const handleUpload = async () => {
+    const credentials = JSON.parse(localStorage.getItem('googleCredentials'));
+    if (!credentials) {
+        alert('No credentials found. Please log in again.');
+        return;
+    }
+
+    const videoDetails = {
+        token: credentials.credential,
+       
+    };
+console.log('token', videoDetails)
+    try {
+        const response = await fetch('http://localhost:3001/upload', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(videoDetails)
+        });
+        if (response.ok) {
+            console.log('Video uploaded successfully');
+        } else {
+            throw new Error('Failed to upload video');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+};
+
+
+
+
+
+
+
   return (
     <div className="bg-primary border-b-2 border-accent ">
       <div className="max-w-6xl mx-auto py-4 px-5">
@@ -46,6 +85,9 @@ const Navbar = () => {
           {/* menu */}
           {/* menu large screen */}
           <div className="hidden lg:flex justify-center items-center gap-5 font-semibold text-xl text-accent  hover:text-orange-300">
+          <button onClick={handleUpload} className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'>
+                    Upload Video
+                </button>
             <Link to="#pricing">
               <button className="text-accent  hover:text-primary transition-all duration-300 hover:bg-gray-800 hover:px-3 hover:py-2 rounded-lg">
                 Pricing

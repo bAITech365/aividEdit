@@ -7,8 +7,8 @@ const Login = () => {
     const navigate = useNavigate()
     const onSuccess = (credentialResponse) => {
         console.log(credentialResponse);
-        navigate('/')
-        // Handle successful login here
+        localStorage.setItem('googleCredentials', JSON.stringify(credentialResponse));
+        navigate('/home');
       };
     
       const onError = () => {
@@ -26,6 +26,7 @@ const Login = () => {
                     <GoogleLogin
         onSuccess={onSuccess}
         onError={onError}
+        scope="https://www.googleapis.com/auth/youtube.upload"
       />
                 </div>
                 <div className='flex justify-center items-center gap-1 pt-4 text-white'>
