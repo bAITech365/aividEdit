@@ -2,21 +2,20 @@ import React, { useState } from 'react';
 import { FaAngleDown } from 'react-icons/fa';
 import { TiTick } from 'react-icons/ti';
 
-function ContentSelect({ options, selectedOption, setSelectedOption, defaultOption, customContent, setCustomContent, placeholder }) {
+function VoiceOption({ options, selectedOption, setSelectedOption, defaultOption }) {
   const [isOpen, setIsOpen] = useState(false);
+
   const toggleDropdown = () => setIsOpen(!isOpen);
 
-// console.log('name', selectedOption?.name)
   const handleSelectOption = (option) => {
     setSelectedOption(option);
     setIsOpen(false); // Close dropdown after selection
   };
 
- const handleTextAreaChange = (e) => {
-    setCustomContent(e.target.value);
-    setSelectedOption({ id: '12', name: 'Custom', content: e.target.value });
+  const handlePlayVoice = (voiceUrl) => {
+    const audio = new Audio(voiceUrl);
+    audio.play();
   };
-
 
   return (
     <div className='w-full pt-5'>
@@ -42,28 +41,19 @@ function ContentSelect({ options, selectedOption, setSelectedOption, defaultOpti
             <ul className="max-h-60 overflow-auto">
               {options.map((option) => (
                 <li key={option.id} onClick={() => handleSelectOption(option)} className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                  {option.icon && <span className="mr-2">{option.icon}</span>}
+                  {option.icon && <span className="mr-2" onClick={() => handlePlayVoice(option.audio)}>{option.icon}</span>}
                   <span className="flex-grow">{option.name}</span>
                   {selectedOption?.id === option.id && <TiTick className='w-5 h-5' />}
+                  
                 </li>
               ))}
             </ul>
+            
           </div>
-        )}
-        {selectedOption?.name === 'Custom' && (
-          <>
-          <textarea
-            className="w-full mt-2 px-4 py-2 border-t border-gray-300 rounded-lg h-40 overflow-y-scroll"
-            placeholder={placeholder}
-            value={customContent}
-            onChange={handleTextAreaChange}
-          />
-          <p className='text-white/70 font-semibold text-lg'>Prompt Guide</p>
-          </>
         )}
       </div>
     </div>
   );
 }
 
-export default ContentSelect;
+export default VoiceOption

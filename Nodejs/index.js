@@ -12,6 +12,7 @@ const { google } = require("googleapis");
 require("dotenv").config();
 // const ffmpeg = require('@ffmpeg-installer/ffmpeg');
 const ffmpeg = require('fluent-ffmpeg');
+const cors = require('cors');
 
 cloudinary.config({ 
   cloud_name: 'dj3qabx11', 
@@ -20,11 +21,11 @@ cloudinary.config({
 });
 
 
-const cors = require('cors');
 
 const app = express();
+app.use(bodyParser.json());
 app.use(cors({
-  origin: '*',
+  origin: ['https://5173-baitech365-aividedit-virgfalrav4.ws-us110.gitpod.io'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   headers: ['Content-Type', 'Authorization']
 }));
@@ -32,7 +33,7 @@ cloudinary.config({
   secure: true
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = `https://5000-baitech365-aividedit-do4t743qzwi.ws-us110.gitpod.io/oauth2callback`;
@@ -97,6 +98,12 @@ app.post("/upload_video",  async (req, res) => {
     console.error("Error uploading video:", error);
     res.status(500).send("Failed to upload video");
   }
+})
+
+app.post("/generateVideo", async (req,res) => {
+  const {destination, content, narrator, language, duration} = req.body;
+
+  console.log('data received from the frontend', req.body)
 })
 
 // Ensure the directory exists
@@ -303,7 +310,7 @@ async function uploadVideoLinkToMongoDB(videoLink) {
     }
   }
   
-  test();
+  // test();
   app.listen(PORT, () => {
     console.log(`lOCAL HOST RUNNING ON: HTTP://LOCALHOST:${PORT}`);
   
