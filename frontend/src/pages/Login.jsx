@@ -8,7 +8,7 @@ const Login = () => {
     const onSuccess = (credentialResponse) => {
         console.log(credentialResponse);
         localStorage.setItem('googleCredentials', JSON.stringify(credentialResponse));
-        navigate('/home');
+        navigate('/dashboard');
       };
     
       const onError = () => {
@@ -17,7 +17,7 @@ const Login = () => {
       };
   return (
     <div>
-    <Navbar/>
+    {/* <Navbar/> */}
     <div className='bg-white flex justify-center items-center'>
         <div className='h-[300px] bg-primary rounded-lg p-10 mt-20'>
                 <h1 className='text-white text-3xl text-center font-semibold'>Login</h1>
@@ -26,7 +26,6 @@ const Login = () => {
                     <GoogleLogin
         onSuccess={onSuccess}
         onError={onError}
-        scope="https://www.googleapis.com/auth/youtube.upload"
       />
                 </div>
                 <div className='flex justify-center items-center gap-1 pt-4 text-white'>

@@ -36,7 +36,7 @@ async function main() {
     try {
       //  console.log(channel.Motivation.GetStoriesList);
         let stories=await helper.GPTRun(channel.Motivation.GetStoriesList);
-        // let stories=await JSON.parse(result);
+        let stories=await JSON.parse(result);
           console.log('stories',stories);
   //      console.log(result);
 
@@ -122,7 +122,7 @@ async function main() {
       quote: "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle."
     }
   ];
-  //await helper.GPTRunForEach(channel.Motivation.ExplainStory,'{O1}',stories);
+  await helper.GPTRunForEach(channel.Motivation.ExplainStory,'{O1}',stories);
     //   console.log('storyDetails',storyDetails);
      let Midjourneyprompts= await helper.GPTRunForEach(channel.Motivation.MidjourneyRunPrompt,'{O2}',storyDetails);
      console.log('Midjourneyprompts',Midjourneyprompts);
@@ -135,8 +135,8 @@ async function main() {
     await helper.bulkInsertDocuments("MidjourneyImages", Midjourneyprompts);
 
 
-    //let channelTags=await GPTRunForEach(channel.Motivation.SocailTags,'O1',stories);
-    //let FinalMovies=await CloudinaryForEach(images,storyDetails,channel.Motivation.CloudinaryConfig,channelTags);
+    let channelTags=await GPTRunForEach(channel.Motivation.SocailTags,'O1',stories);
+    let FinalMovies=await CloudinaryForEach(images,storyDetails,channel.Motivation.CloudinaryConfig,channelTags);
 
     } catch (error) {
         console.error('Error in main function:', error);

@@ -2,7 +2,7 @@ import React from 'react'
 
 const Pricing = () => {
   return (
-    <div className='max-w-6xl mx-auto px-5 mb-40'>
+    <div id='pricing' className='max-w-6xl mx-auto px-5 mb-40'>
       {/* heading */}
       <div className=" flex justify-center items-center flex-col">
       <h1 className="bg-gradient-to-r from-primary to-blue-700 text-transparent text-5xl text-center lg:text-left font-bold leading-snug" style={{ backgroundClip: 'text' }}>Pricing

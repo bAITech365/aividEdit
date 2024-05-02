@@ -6,9 +6,8 @@ import { GoogleLogin } from '@react-oauth/google';
 const Register = () => {
     const navigate = useNavigate()
     const onSuccess = (credentialResponse) => {
-        console.log(credentialResponse);
-        navigate('/')
-        // Handle successful login here
+      localStorage.setItem('googleCredentials', JSON.stringify(credentialResponse));
+      navigate('/dashboard');
       };
     
       const onError = () => {
@@ -17,7 +16,7 @@ const Register = () => {
       };
   return (
    <div>
-    <Navbar/>
+    {/* <Navbar/> */}
     <div className='bg-white flex justify-center items-center'>
         <div className='h-[300px] bg-primary rounded-lg p-10 mt-20'>
                 <h1 className='text-white text-3xl text-center font-semibold'>Register</h1>

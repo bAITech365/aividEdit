@@ -22,6 +22,8 @@ const Navbar = () => {
 
   const handleLogout = () => {
     googleLogout();
+    // Clear the token stored in local storage
+    localStorage.removeItem('googleCredentials')
     navigate('/')
   };
 
@@ -47,7 +49,7 @@ const Navbar = () => {
     };
 console.log('token', videoDetails)
     try {
-        const response = await fetch('http://localhost:3001/upload', {
+        const response = await fetch('https://3000-baitech365-aividedit-virgfalrav4.ws-us110.gitpod.io/upload', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -76,12 +78,14 @@ console.log('token', videoDetails)
         {/* container div */}
         <div className="flex justify-between items-center">
           {/* logo and name */}
+          <Link to='/'>
           <div className="flex justify-center items-center gap-3">
             <div className="text-accent text-2xl">
               <GiDoctorFace />
             </div>
             <h1 className="text-2xl font-bold text-accent">AutoShorts.ai</h1>
           </div>
+          </Link>
           {/* menu */}
           {/* menu large screen */}
           <div className="hidden lg:flex justify-center items-center gap-5 font-semibold text-xl text-accent  hover:text-orange-300">

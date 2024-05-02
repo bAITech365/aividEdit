@@ -2,15 +2,27 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const { google } = require('googleapis');
-
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+ 
 const app = express();
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  headers: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
 app.post('/upload', async (req, res) => {
     try {
-        const { token, videoFilePath, videoTitle, videoDescription } = req.body;
+        const { token } = req.body;
+        const title = 'test'
+        const description = 'test desc'
+        console.log('google token', token)
+        const videoFilePath = path.join(__dirname, 'concatFile.mp4')
         const auth = new google.auth.OAuth2();
         auth.setCredentials({ access_token: token });
 
@@ -23,8 +35,8 @@ app.post('/upload', async (req, res) => {
             part: 'id,snippet,status',
             requestBody: {
                 snippet: {
-                    title: videoTitle,
-                    description: videoDescription,
+                    title,
+                    description,
                     categoryId: '22',  // This is for 'People & Blogs'
                 },
                 status: {
