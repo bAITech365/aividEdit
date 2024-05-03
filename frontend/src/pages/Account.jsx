@@ -3,15 +3,15 @@ import GradientHeading from "../components/GradientHeading";
 
 const Account = () => {
   return (
-    <div>
+    <div className="max-w-6xl mx-auto">
       {/*update email  */}
       <div>
         <div className="pt-20 px-5 pb-5">
           <GradientHeading text="UPDATE EMAIL" />
         </div>
 
-        <div className="px-5 md:px-16">
-          <div className="bg-slate-600 max-w-2xl mx-auto px-8 py-10 md:px-16 shadow-xl rounded-lg flex justify-center items-center gap-2">
+        <div className="px-5 ">
+          <div className="bg-slate-600 max-w-2xl  px-8 py-10 shadow-xl rounded-lg flex justify-center items-center gap-2">
             <input
               type="email"
               placeholder="enayetflweb@gmail.com"
@@ -30,8 +30,8 @@ const Account = () => {
         <div className="pt-5 px-5 pb-5">
           <GradientHeading text="CHANGE PASSWORD" />
         </div>
-        <div className="px-5 md:px-16">
-            <div className="bg-slate-600 max-w-2xl mx-auto px-8 pt-10 pb-5 md:px-16 shadow-xl rounded-lg space-y-4 ">
+        <div className="px-5 ">
+            <div className="bg-slate-600 max-w-2xl px-8 pt-10 pb-5 shadow-xl rounded-lg space-y-4 ">
               <input
                 type="password"
                 placeholder="New Password"

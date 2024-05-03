@@ -35,7 +35,10 @@ async function main() {
   //return;
     try {
       //  console.log(channel.Motivation.GetStoriesList);
-        let stories=await helper.GPTRun(channel.Motivation.GetStoriesList);
+      let x = channel.Motivation.GetStoriesList.replace("{topicCount}", "{1}");
+      let y = x.replace("{topicName}", "{use}");
+        let stories=await helper.GPTRun(y);
+        
         let stories=await JSON.parse(result);
           console.log('stories',stories);
   //      console.log(result);

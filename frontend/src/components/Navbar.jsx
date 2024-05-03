@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { GiDoctorFace, GiHamburgerMenu } from "react-icons/gi";
 import { googleLogout } from '@react-oauth/google'
 import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../provider/AuthProvider";
 
 const Navbar = () => {
   // const { googleLogout } = useGoogleLogout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { logOut, user} = useContext(AuthContext)
   const dropdownRef = useRef(null);
   const navigate = useNavigate()
 
@@ -20,13 +22,7 @@ const Navbar = () => {
   };
 
 
-  const handleLogout = () => {
-    googleLogout();
-    // Clear the token stored in local storage
-    localStorage.removeItem('googleCredentials')
-    navigate('/')
-  };
-
+  
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -35,36 +31,6 @@ const Navbar = () => {
   }, []);
 
 
-
-  const handleUpload = async () => {
-    const credentials = JSON.parse(localStorage.getItem('googleCredentials'));
-    if (!credentials) {
-        alert('No credentials found. Please log in again.');
-        return;
-    }
-
-    const videoDetails = {
-        token: credentials.credential,
-       
-    };
-console.log('token', videoDetails)
-    try {
-        const response = await fetch('https://3000-baitech365-aividedit-virgfalrav4.ws-us110.gitpod.io/upload', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(videoDetails)
-        });
-        if (response.ok) {
-            console.log('Video uploaded successfully');
-        } else {
-            throw new Error('Failed to upload video');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-};
 
 
 
@@ -89,9 +55,7 @@ console.log('token', videoDetails)
           {/* menu */}
           {/* menu large screen */}
           <div className="hidden lg:flex justify-center items-center gap-5 font-semibold text-xl text-accent  hover:text-orange-300">
-          <button onClick={handleUpload} className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'>
-                    Upload Video
-                </button>
+        
             <Link to="#pricing">
               <button className="text-accent  hover:text-primary transition-all duration-300 hover:bg-gray-800 hover:px-3 hover:py-2 rounded-lg">
                 Pricing
@@ -109,7 +73,7 @@ console.log('token', videoDetails)
               <button className="text-accent  hover:text-primary transition-all duration-300 hover:bg-gray-800 hover:px-3 hover:py-2 rounded-lg">
                 Sign Up
               </button>
-              <button onClick={handleLogout}>Logout</button>
+              <button onClick={logOut}>Logout</button>
             </Link>
 
           </div>
@@ -141,6 +105,7 @@ console.log('token', videoDetails)
                     Sign Up
                   </button>
                 </Link>
+                <button onClick={logOut}>Logout</button>
               </div>
             )}
           </div>
