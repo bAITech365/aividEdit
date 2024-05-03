@@ -5,14 +5,11 @@ import { AuthContext } from "../provider/AuthProvider";
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  console.log(location, location.state)
 
   const { googleSignIn, user } = useContext(AuthContext);
 
-  // useEffect(() => {
-  //   if (user) {
-  //     navigate("/dashboard");
-  //   }
-  // }, [user]);
+ 
 
   const handleGoogleSignIn = () => {
     googleSignIn()

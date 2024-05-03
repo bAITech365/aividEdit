@@ -1,5 +1,4 @@
 import React, { useContext, useEffect } from 'react';
-import Navbar from '../components/Navbar';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { AuthContext } from '../provider/AuthProvider';
@@ -8,15 +7,9 @@ const Register = () => {
     
   const navigate = useNavigate()
     const location = useLocation()
-   
-    const { googleSignIn, user} = useContext(AuthContext)
+    const { user} = useContext(AuthContext)
  
-  //   useEffect(() => {
-  //      if(user){
-  //   navigate('/dashboard')
-  // }
 
-  //   },[user])
 
   const handleGoogleSignIn = () => {
     googleSignIn()
