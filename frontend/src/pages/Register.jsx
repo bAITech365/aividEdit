@@ -11,12 +11,12 @@ const Register = () => {
    
     const { googleSignIn, user} = useContext(AuthContext)
  
-    useEffect(() => {
-       if(user){
-    navigate('/dashboard')
-  }
+  //   useEffect(() => {
+  //      if(user){
+  //   navigate('/dashboard')
+  // }
 
-    },[user])
+  //   },[user])
 
   const handleGoogleSignIn = () => {
     googleSignIn()

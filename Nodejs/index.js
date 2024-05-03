@@ -10,7 +10,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const { google } = require("googleapis");
 require("dotenv").config();
-// const ffmpeg = require('@ffmpeg-installer/ffmpeg');
+const { client, db } = require('./mongoConnection')
 const ffmpeg = require('fluent-ffmpeg');
 const cors = require('cors');
 
@@ -25,7 +25,7 @@ cloudinary.config({
 const app = express();
 app.use(bodyParser.json());
 app.use(cors({
-  origin: ['https://5173-baitech365-aividedit-virgfalrav4.ws-us110.gitpod.io'],
+  origin: ['https://5173-baitech365-aividedit-1tshd2b1yqy.ws-us110.gitpod.io'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   headers: ['Content-Type', 'Authorization']
 }));
@@ -34,6 +34,9 @@ cloudinary.config({
 });
 
 const PORT = process.env.PORT || 3000;
+const userCollection = db.collection('user');
+const seriesCollection = db.collection('series');
+
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = `https://5000-baitech365-aividedit-do4t743qzwi.ws-us110.gitpod.io/oauth2callback`;
@@ -67,6 +70,32 @@ app.get("/oauth2callback", async (req, res) => {
 
 
 const imagesDir = path.join(__dirname, '..', 'videoshow', 'examples');
+
+app.post("/user", async (req, res) => {
+  const { email, tokenInfo } = req.body;
+
+  const existingUser = await userCollection.findOne({ email });
+
+  if (!existingUser) {
+    const newUser = {
+      email,
+      tokenInfo,
+      plan: 'free',
+      expiryDate: null
+    };
+
+    const result = await userCollection.insertOne(newUser);
+    if(result.insertedId){
+      res.json(newUser);
+    }else{
+      res.json({message:'Could Not saved. Try again.'})
+    }
+    
+  } else {
+    res.json(existingUser);
+  }
+});
+
 
 app.post("/upload_video",  async (req, res) => {
   const title = 'test 1'
