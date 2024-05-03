@@ -14,7 +14,10 @@ require("dotenv").config();
 const { client, db } = require('./mongoConnection')
 const ffmpeg = require('fluent-ffmpeg');
 const cors = require('cors');
- 
+const { updateChannel } = require('./config.js');
+const { main } = require('./main.js')
+const { channel } = require('./config.js');
+const {helper} = require('./helper.js');
 cloudinary.config({ 
   cloud_name: 'dj3qabx11', 
   api_key: '533762782692462', 
@@ -34,9 +37,19 @@ cloudinary.config({
   secure: true
 });
 
+async function ensureChatGPTAPI() {
+  if (!helper.getChatGPTAPI()) {
+      await helper.setupChatGPTAPI();
+  }
+  return helper.getChatGPTAPI();
+}
+
+
 const PORT = process.env.PORT || 3000;
 const userCollection = db.collection('user');
 const seriesCollection = db.collection('series');
+
+   
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
@@ -70,7 +83,7 @@ app.get("/oauth2callback", async (req, res) => {
 });
 
 
-const imagesDir = path.join(__dirname, '..', 'videoshow', 'examples');
+
 
 // Saving and getting user login, plan data
 app.post("/user", async (req, res) => {
@@ -169,17 +182,37 @@ app.get('/series_info', async (req, res) => {
 
 app.post('/generate_video', async(req, res) =>{
   const {email,seriesId} = req.body;
-  console.log('route hit')
   const seriesData = await seriesCollection.findOne({ _id: new ObjectId(seriesId) });
 
   if (seriesData) {
-    console.log('Series data found:', seriesData);
-    // Generate video logic here
+    // console.log('Series data found:', seriesData);
+    const topic = seriesData.content;
+    console.log('topic:', topic);
+    
+     // Copy the channel object and modify it
+     const modifiedChannel = {
+      ...channel,  // Spread the existing channel object
+      Motivation: {
+        ...channel.Motivation,  
+        GetStoriesList: channel.Motivation.GetStoriesList.replace('{topicName}', topic).replace('{topicCount}', '5')
+      }
+    };
+    const chatGPTAPI = await ensureChatGPTAPI();
+    if (chatGPTAPI) {
+      await main(modifiedChannel, seriesId);
+  // await cronJob(); // Wait for the cron job to finish
+  const generatedVideo = await test(seriesId)
+  console.log('final output', generatedVideo)
+  } else {
+      console.error("Failed to initialize ChatGPTAPI");
+  }
+     
   } else {
     console.log('Series data not found');
   }
 })
 
+const imagesDir = path.join(__dirname, '..', 'videoshow', 'examples');
 // Ensure the directory exists
 if (!fs.existsSync(imagesDir)){
     fs.mkdirSync(imagesDir, { recursive: true });
@@ -200,7 +233,9 @@ async function getAudioDuration(filePath) {
   });
 }
 
-async function getAllMidjourneyData() {
+
+
+async function getAllMidjourneyData(seriesId) {
   try {
       const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
       const client = new MongoClient(uri);
@@ -208,10 +243,10 @@ async function getAllMidjourneyData() {
 
       const db = client.db();
       const collection = db.collection('MidjourneyImages');
-      const topic = 'Motivation';
-      const documents = await collection.find({ topic: topic }).project({ _id: 0, upscaleImage_url: 1, quote: 1 }).limit(5).toArray();
+      const documents = await collection.find({ seriesId: seriesId }).project({ _id: 0, upscaleImage_url: 1, quote: 1, topic :1 }).limit(5).toArray();
       
-      // console.log(documents)
+      
+      console.log('midjourney data doc', documents)
 
 const images = [];
 const quotes = [];
@@ -239,7 +274,7 @@ async function downloadImage(url, index) {
 for (let i = 0; i < images.length; i++) {
   await downloadImage(images[i], i);
 }
-console.log('Downloaded images:', imageFileNames);
+// console.log('Downloaded images:', imageFileNames);
 
         const generatedFiles = [];
 
@@ -309,7 +344,7 @@ async function uploadVideoLinkToMongoDB(videoLink) {
 }
 
   // Usage example
-  async function test() {
+  async function test(seriesId) {
   // const generatedFiles = [
   //   {
   //     audio: 'output_2024-04-30T04-54-22.183Z.mp3',
@@ -346,8 +381,7 @@ async function uploadVideoLinkToMongoDB(videoLink) {
   let cloudinaryLink;
     try {
       
-      // getting images and quotes from database and creating audio with the quotes
-      const generatedFiles = await getAllMidjourneyData();
+    const generatedFiles = await getAllMidjourneyData(seriesId);
 
       // creating video for each quote along with subtitle
      await createVideoWithGeneratedFiles(generatedFiles);
@@ -357,14 +391,14 @@ async function uploadVideoLinkToMongoDB(videoLink) {
 
       // concatenate all the videos to make a single video
 
-      // await concatenateVideos();
+      await concatenateVideos();
       
       // console.log('Concatenation done for video')
       // console.log(videoFilePath)
 
       // uploading the video in cloudinary
 
-      await uploadVideoToCloudinary(videoFilePath)
+  await uploadVideoToCloudinary(videoFilePath)
   .then(uploadedVideoUrl => {
     cloudinaryLink = uploadedVideoUrl
     console.log('Video uploaded to Cloudinary:', uploadedVideoUrl);
@@ -376,8 +410,8 @@ async function uploadVideoLinkToMongoDB(videoLink) {
   console.log('cludl link', cloudinaryLink)
 
       // Saving uploaded video link to the database.
-      await uploadVideoLinkToMongoDB(cloudinaryLink)
-      console.log('video file link upload complete.')
+  await uploadVideoLinkToMongoDB(cloudinaryLink)
+  console.log('video file link upload complete.')
 
     } catch (error) {
       console.error('Error:', error);

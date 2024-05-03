@@ -1,11 +1,24 @@
 const axios = require('axios');
 // const {ChatGPTAPI} = require('chatgpt');
 let ChatGPTAPI;
+// async function setupChatGPTAPI() {
+//     const module = await import('chatgpt');
+//     ChatGPTAPI = module.ChatGPTAPI;
+//       // Ensure main is called only after the import completes
+// }
+
 async function setupChatGPTAPI() {
-    const module = await import('chatgpt');
-    ChatGPTAPI = module.ChatGPTAPI;
-      // Ensure main is called only after the import completes
+  if (!ChatGPTAPI) {
+      const module = await import('chatgpt');
+      ChatGPTAPI = module.ChatGPTAPI;
+  }
+  return ChatGPTAPI;  // Return the initialized API
 }
+
+function getChatGPTAPI() {
+  return ChatGPTAPI;  // Returns the initialized API or undefined
+}
+
 
 const OpenAI = require('openai');
 const {MongoClient} = require('mongodb');
@@ -39,12 +52,15 @@ if(true){
     result=await GPTRun(finalPrompt);
     //console.log(result.length);
     if (result.length) outputArray.push(...result);
-    console.log(outputArray.length);
+    // console.log(outputArray.length);
    // console.log(outputArray);
   }
+  // console.log('gptrun for each', outputArray)
     return outputArray
 }
 }
+
+
 let errorcount=0;
 function convertMarkdownToJsonArray(markdownString) {
   let jsonArray=[];
@@ -225,7 +241,8 @@ module.exports.helper={ setupChatGPTAPI,
                         GPTRun,
                         GPTRunForEach,
                         bulkInsertDocuments,
-                        generateImage
+                        generateImage,getChatGPTAPI
+
 };
 
 
