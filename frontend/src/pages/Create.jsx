@@ -7,6 +7,7 @@ import VoiceOption from '../components/VoiceOption';
 import axios from 'axios';
 import { destinationOptions, durationOptions, languageOptions,contentOptions, narrationOptions  } from '../constant/index.jsx';
 import { AuthContext } from '../provider/AuthProvider.jsx';
+import Loading from '../components/Loading.jsx';
 
 const Create = () => {
   const [destination, setDestination] = useState(null);
@@ -53,6 +54,7 @@ const Create = () => {
         <h1 className='text-center text-black text-4xl font-bold pt-16'>CREATE A SERIES</h1>
         <p className='text-center text-black/70 font-semibold pt-4'>Schedule a series of Faceless Videos to post on auto-pilot.</p>
       </div>
+     
       {/* form div */}
      <div className='px-5 md:px-16'>
      <div className='bg-slate-600 max-w-2xl mx-auto px-8 py-10 md:px-16 shadow-xl rounded-lg'>

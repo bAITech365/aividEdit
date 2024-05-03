@@ -130,7 +130,7 @@ app.post("/upload_video",  async (req, res) => {
 })
 
 app.post("/series", async (req,res) => {
-  const {destination, content, narrator, language, duration} = req.body;
+  const {destination, content, narrator, language, duration, userEmail} = req.body;
 
   console.log('data received from the frontend', req.body)
   try {
@@ -139,7 +139,8 @@ app.post("/series", async (req,res) => {
       content,
       narrator,
       language,
-      duration
+      duration,
+      userEmail
     });
     console.log('Data saved successfully:', result);
     res.status(201).send('Data saved successfully');
@@ -149,6 +150,21 @@ app.post("/series", async (req,res) => {
   }
 
 })
+
+app.get('/series_info', async (req, res) => {
+  const email = req.query.email;
+console.log('query', email)
+console.log('route hit')
+  try {
+    const seriesData = await seriesCollection.find({ userEmail: email }).toArray();
+    console.log(seriesData)
+    res.json(seriesData);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching series data' });
+  }
+});
+
 
 // Ensure the directory exists
 if (!fs.existsSync(imagesDir)){

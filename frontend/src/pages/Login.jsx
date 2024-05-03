@@ -7,21 +7,25 @@ const Login = () => {
   const location = useLocation();
   console.log(location, location.state)
 
-  const { googleSignIn } = useContext(AuthContext);
+  const { googleSignIn, setLoading } = useContext(AuthContext);
 
  
 
   const handleGoogleSignIn = () => {
+    setLoading(true)
     googleSignIn()
       .then((result) => {
         console.log(result);
         if (result.user.email) {
           navigate(location?.state ? location.state : "/dashboard");
+          setLoading(false)
         }
+        setLoading(false)
       })
       .catch((error) => {
         if (error) {
           console.log(`Error in google login ${error}`);
+          setLoading(false)
         }
       });
   };
