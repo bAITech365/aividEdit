@@ -418,6 +418,39 @@ async function uploadVideoLinkToMongoDB(videoLink) {
     }
   }
   
+//   async function fetchAllDataFromMidjourneyImages() {
+//     const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
+//       const client = new MongoClient(uri);
+
+//     try {
+//         // Connect to the MongoDB cluster
+//         await client.connect();
+//         const db = client.db();
+//         const collection = db.collection('MidjourneyImages');
+
+//         // Fetch all documents from the collection
+//         // const documents = await collection.find({seriesId:'6634cf9ad1792b03f41b0038' }).toArray();
+//         const seriesId = '6634cf9ad1792b03f41b0038'; 
+//         // Count the documents that match the seriesId
+//         const count = await collection.countDocuments({ seriesId: seriesId });
+        
+//         // Log the count
+//         console.log(`There are ${count} documents in the MidjourneyImages collection with seriesId '${seriesId}'.`);
+    
+//         // Log the documents
+//         // console.log(documents);
+//     } catch (error) {
+//         // Handle potential errors
+//         console.error("Failed to fetch data:", error);
+//     } finally {
+//         // Ensure that the client will close when you finish/error
+//         await client.close();
+//     }
+// }
+
+// fetchAllDataFromMidjourneyImages();
+
+
   // test();
   app.listen(PORT, () => {
     console.log(`lOCAL HOST RUNNING ON: HTTP://LOCALHOST:${PORT}`);

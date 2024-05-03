@@ -146,7 +146,7 @@ async function main(modifiedChannel, seriesId) {
 
     await helper.bulkInsertDocuments("MidjourneyImages", Midjourneyprompts);
 
-    await cronJob();
+    await cronJob(seriesId);
     // let channelTags=await GPTRunForEach(modifiedChannel.Motivation.SocailTags,'O1',stories);
 
 
@@ -162,7 +162,7 @@ async function main(modifiedChannel, seriesId) {
 
 
 
-async function cronJob() {
+async function cronJob(seriesId) {
   console.log(`  `);
   console.log('Running cron job...' ,new Date());
   try {
@@ -179,9 +179,9 @@ async function dbConnect() {
       const collection = db.collection('MidjourneyImages');
 
       // Find documents with status "Notstarted"
-      const notStartedImages = await collection.find({ status: "Notstarted" }).limit(2).toArray();
-      const inProgressImages = await collection.find({ status: "InProgess" }).limit(2).toArray();
-      const upscalePendingImages = await collection.find({ status: "upscalePending" }).limit(2).toArray();
+      const notStartedImages = await collection.find({ status: "Notstarted", seriesId: seriesId }).limit(2).toArray();
+      const inProgressImages = await collection.find({ status: "InProgess", seriesId: seriesId }).limit(2).toArray();
+      const upscalePendingImages = await collection.find({ status: "upscalePending", seriesId: seriesId }).limit(2).toArray();
       // Process each image 
    
       for (const image of notStartedImages) {
