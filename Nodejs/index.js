@@ -129,10 +129,25 @@ app.post("/upload_video",  async (req, res) => {
   }
 })
 
-app.post("/generateVideo", async (req,res) => {
+app.post("/series", async (req,res) => {
   const {destination, content, narrator, language, duration} = req.body;
 
   console.log('data received from the frontend', req.body)
+  try {
+    const result = await seriesCollection.insertOne({
+      destination,
+      content,
+      narrator,
+      language,
+      duration
+    });
+    console.log('Data saved successfully:', result);
+    res.status(201).send('Data saved successfully');
+  } catch (error) {
+    console.error('Error saving data:', error);
+    res.status(500).send('Error saving data');
+  }
+
 })
 
 // Ensure the directory exists

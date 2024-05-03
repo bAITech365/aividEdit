@@ -7,7 +7,7 @@ const Login = () => {
   const location = useLocation();
   console.log(location, location.state)
 
-  const { googleSignIn, user } = useContext(AuthContext);
+  const { googleSignIn } = useContext(AuthContext);
 
  
 

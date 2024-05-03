@@ -1,13 +1,12 @@
 import React, { useContext, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
 import { AuthContext } from '../provider/AuthProvider';
 
 const Register = () => {
     
   const navigate = useNavigate()
     const location = useLocation()
-    const { user} = useContext(AuthContext)
+    const { googleSignIn} = useContext(AuthContext)
  
 
 

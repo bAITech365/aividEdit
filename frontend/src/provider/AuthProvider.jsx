@@ -68,6 +68,7 @@ const getUserData = async (userData) => {
     googleSignIn, 
     setUser,
     logOut,
+    userPlan
   }
 
   return (
