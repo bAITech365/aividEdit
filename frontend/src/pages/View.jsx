@@ -21,6 +21,21 @@ console.log(seriesData)
   }, [userPlan.email]);
 
 
+  const handleGenerateVideo = async (item) => {
+    console.log(item, item._id)
+    try {
+      const response = await axios.post(`https://3000-baitech365-aividedit-1tshd2b1yqy.ws-us110.gitpod.io/generate_video`, {
+        email: userPlan.email,
+        seriesId: item._id,
+      });
+      console.log(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  
+  };
+
+  
   return (
     <div className='max-w-6xl mx-auto p-10'>
       <h1 className='text-2xl font-bold text-black pb-3'>YOUR SERIES</h1>
@@ -38,7 +53,9 @@ console.log(seriesData)
           <p className="text-lg text-white"><span className="font-bold">Video Duration: </span> {item?.duration}</p>
           <p className="text-lg text-white"><span className="font-bold">Narrator: </span> {item?.narrator}</p>
           <p className="text-lg text-white pb-10"><span className="font-bold">Send Type: </span> {item?.destination}</p>
-          <button className='bg-gradient-to-r from-primary to-blue-700 text-white py-3 px-6 text-lg rounded-lg font-semibold '>GENERATE VIDEO</button>
+          <button className='bg-gradient-to-r from-primary to-blue-700 text-white py-3 px-6 text-lg rounded-lg font-semibold '
+          onClick={() => handleGenerateVideo(item)}
+          >GENERATE VIDEO</button>
         </div>
        ))
       ) : (

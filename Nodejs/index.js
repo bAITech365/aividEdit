@@ -2,7 +2,8 @@ const cloudinary = require('cloudinary').v2;
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
+// const { ObjectID } = require('mongodb');
 const { generateVoice  } = require('../videoshow/helper');
 const { createVideoWithGeneratedFiles } = require('../videoshow/examples/transition');
 const concatenateVideos = require('../videoshow/examples/concat');
@@ -13,7 +14,7 @@ require("dotenv").config();
 const { client, db } = require('./mongoConnection')
 const ffmpeg = require('fluent-ffmpeg');
 const cors = require('cors');
-
+ 
 cloudinary.config({ 
   cloud_name: 'dj3qabx11', 
   api_key: '533762782692462', 
@@ -71,6 +72,7 @@ app.get("/oauth2callback", async (req, res) => {
 
 const imagesDir = path.join(__dirname, '..', 'videoshow', 'examples');
 
+// Saving and getting user login, plan data
 app.post("/user", async (req, res) => {
   const { email, tokenInfo } = req.body;
 
@@ -129,6 +131,7 @@ app.post("/upload_video",  async (req, res) => {
   }
 })
 
+// Saving series data
 app.post("/series", async (req,res) => {
   const {destination, content, narrator, language, duration, userEmail} = req.body;
 
@@ -151,13 +154,12 @@ app.post("/series", async (req,res) => {
 
 })
 
+// Getting series info
 app.get('/series_info', async (req, res) => {
   const email = req.query.email;
-console.log('query', email)
-console.log('route hit')
+
   try {
     const seriesData = await seriesCollection.find({ userEmail: email }).toArray();
-    console.log(seriesData)
     res.json(seriesData);
   } catch (error) {
     console.error(error);
@@ -165,6 +167,18 @@ console.log('route hit')
   }
 });
 
+app.post('/generate_video', async(req, res) =>{
+  const {email,seriesId} = req.body;
+  console.log('route hit')
+  const seriesData = await seriesCollection.findOne({ _id: new ObjectId(seriesId) });
+
+  if (seriesData) {
+    console.log('Series data found:', seriesData);
+    // Generate video logic here
+  } else {
+    console.log('Series data not found');
+  }
+})
 
 // Ensure the directory exists
 if (!fs.existsSync(imagesDir)){
