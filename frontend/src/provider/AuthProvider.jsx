@@ -44,8 +44,8 @@ console.log(user?.email)
 const getUserData = async (userData) => { 
     try {
       setLoading(true)
-        const response = await axios.post(`https://3000-baitech365-aividedit-1tshd2b1yqy.ws-us110.gitpod.io/user`, userData)
-        const data = await response.data;
+        const response = await axios.post(`https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/user`, userData)
+        const data = await response?.data;
         console.log('res', response)
         if(data?.email){
             setUserPlan(data)
@@ -62,8 +62,7 @@ const getUserData = async (userData) => {
      
         const userData = {
             email : user?.email,
-            tokenInfo : user?.stsTokenManager
-        }
+          }
       getUserData(userData)
     }
   }, [user, userPlan])

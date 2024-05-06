@@ -18,6 +18,13 @@ const { updateChannel } = require('./config.js');
 const { main } = require('./main.js')
 const { channel } = require('./config.js');
 const {helper} = require('./helper.js');
+const crypto = require('crypto');
+const session = require('express-session');
+const jwt = require('jsonwebtoken');
+
+
+
+
 cloudinary.config({ 
   cloud_name: 'dj3qabx11', 
   api_key: '533762782692462', 
@@ -29,13 +36,18 @@ cloudinary.config({
 const app = express();
 app.use(bodyParser.json());
 app.use(cors({
-  origin: ['https://5173-baitech365-aividedit-1tshd2b1yqy.ws-us110.gitpod.io'],
+  origin: ['https://5173-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   headers: ['Content-Type', 'Authorization']
 }));
 cloudinary.config({
   secure: true
 });
+app.use(session({
+  secret: 'secret',
+  resave: false,
+  saveUninitialized: true,
+}));
 
 async function ensureChatGPTAPI() {
   if (!helper.getChatGPTAPI()) {
@@ -53,33 +65,77 @@ const seriesCollection = db.collection('series');
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REDIRECT_URI = `https://5000-baitech365-aividedit-do4t743qzwi.ws-us110.gitpod.io/oauth2callback`;
+const REDIRECT_URI = `https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/oauth2callback`;
 const oAuth2Client = new google.auth.OAuth2(
   CLIENT_ID,
   CLIENT_SECRET,
   REDIRECT_URI
 );
-let userToken;
+// let userToken;
 
-const SCOPES = ["https://www.googleapis.com/auth/youtube.upload"];
+// const SCOPES = ["https://www.googleapis.com/auth/youtube.upload" ,
+// 'openid',
+// 'email'];
 
 app.get("/connect_youtube", (req, res) => {
+  const state = crypto.randomBytes(20).toString('hex');
+  const nonce = crypto.randomBytes(20).toString('hex'); 
+
+
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: SCOPES,
+    scope: ["https://www.googleapis.com/auth/youtube.upload" ,
+    'openid',
+    'email'],
+    include_granted_scopes: true,
+    state: state,
+    nonce: nonce,
+    response_type: 'code', 
+    prompt: 'consent',
   });
-  userToken = ''
+  // userToken = ''
   console.log('redirect url', authUrl)
   res.redirect(authUrl);
 });
 
 app.get("/oauth2callback", async (req, res) => {
   const { code } = req.query;
-  const { tokens } = await oAuth2Client.getToken(code);
-  console.log('token',tokens)
-  oAuth2Client.setCredentials(tokens);
-  userToken = tokens
-  res.redirect('http://localhost:5173')
+  console.log('code callback', code)
+  try {
+    const { tokens } = await oAuth2Client.getToken(code);
+    console.log('tokens', tokens)
+    oAuth2Client.setCredentials(tokens);
+
+     // Decode the id_token
+     const decoded = jwt.decode(tokens.id_token);
+     console.log('decoded', decoded)
+
+     const user = await userCollection.findOne({ email: decoded.email });
+     console.log('inside oauth user data', user)
+    // Store the tokens and user ID in the database
+    if (user) {
+      const updateResult = await userCollection.updateOne(
+        { email: decoded.email },
+        { $set: { accessToken: tokens.access_token, refreshToken: tokens.refresh_token } }
+      );
+      console.log('Updated document:', updateResult);
+    } else {
+      // No user found, create a new user
+      const newUser = {
+        googleId: decoded.sub,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        email: decoded.email
+      };
+      const insertResult = await userCollection.insertOne(newUser);
+      console.log('Inserted document:', insertResult);
+    }
+
+    res.redirect(`https://5173-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/dashboard?googleId=${decoded.sub}`); // Redirect back to the frontend
+  } catch (error) {
+    console.error('Error retrieving access token', error);
+    res.status(500).send('Authentication failed');
+  }
 });
 
 
@@ -87,14 +143,14 @@ app.get("/oauth2callback", async (req, res) => {
 
 // Saving and getting user login, plan data
 app.post("/user", async (req, res) => {
-  const { email, tokenInfo } = req.body;
-
+  const { email } = req.body;
+ 
+  console.log(email)
   const existingUser = await userCollection.findOne({ email });
-
+console.log(existingUser)
   if (!existingUser) {
     const newUser = {
       email,
-      tokenInfo,
       plan: 'free',
       expiryDate: null
     };
@@ -111,39 +167,99 @@ app.post("/user", async (req, res) => {
   }
 });
 
+async function deleteUserById(id) {
+  try {
+    // Assuming userCollection is your MongoDB collection
+    const result = await userCollection.deleteOne({ _id: id });
+    if (result.deletedCount === 1) {
+      console.log('Document deleted successfully');
+    } else {
+      console.log('Document not found');
+    }
+  } catch (error) {
+    console.error('Error deleting document:', error);
+  }
+} 
+
+// Usage
+// deleteUserById(new ObjectId('6638b185b195df46e450ee01'));
+
+async function userEmail() {
+  const email = 'enayetflweb.com'
+  const user = await userCollection.find().toArray();
+    
+  if (user && user.length > 0) {
+    console.log('Users found:', user);
+  } else {
+    console.log('No user found with that email');
+  }
+}
+userEmail()
 
 app.post("/upload_video",  async (req, res) => {
-  const title = 'test 1'
-  const description = 'desc 1'
-  const videoFilePath = path.join(__dirname, 'video10.mp4')
-  try {
-    const youtube = google.youtube({ version: "v3", auth: oAuth2Client });
-    const response = await youtube.videos.insert({
-      part: "snippet,contentDetails,status",
-      requestBody: {
-        snippet: {
-          title: title,
-          description: description,
-          tags: ["Node.js", "API Upload"],
-        },
-        status: {
-          privacyStatus: "public",
-        },
-      },
-      media: {
-        body: fs.createReadStream(videoFilePath),
-      },
-    });
+  const { email } = req.body;
+  
+  const user = await userCollection.findOne({ email });
+  if (!user) {
+    return res.status(404).send('User not found');
+  }
+console.log('user in upload video', user)
+  oAuth2Client.setCredentials({
+    access_token: user.accessToken,
+    refresh_token: user.refreshToken,
+  });
+ 
+  const youtube = google.youtube({
+    version: 'v3',
+    auth: oAuth2Client,
+  });
 
-    fs.unlinkSync(videoFilePath);
-    console.log('youtube response', response)
-    res.status(200).send("Video uploaded successfully!");
+
+
+  // Helper function to upload a video
+  async function uploadVideo(filePath, title, description, delay) {
+    return new Promise((resolve, reject) => {
+      setTimeout(async () => {
+        try {
+          const response = await youtube.videos.insert({
+            part: 'snippet,status',
+            requestBody: {
+              snippet: {
+                title: title,
+                description: description,
+              },
+              status: {
+                privacyStatus: 'private',
+              },
+            },
+            media: {
+              body: fs.createReadStream(filePath),
+            },
+          });
+          console.log(`Video uploaded with ID: ${response.data.id} on ${new Date().toLocaleString()}`);
+          resolve(response.data.id); // Resolve the promise with the video ID
+        } catch (error) {
+          console.error('Failed to upload video:', error);
+          reject(error); // Reject the promise on error
+        }
+      }, delay);
+    });
+  }
+  
+  try {
+    // Upload videos sequentially with a two-minute interval between each
+    await uploadVideo('./final_1.mp4', 'Test Video 1', 'This is the first test video.', 0);
+    await uploadVideo('./final_2.mp4', 'Test Video 2', 'This is the second test video.', 20000);
+    await uploadVideo('./final_3.mp4', 'Test Video 3', 'This is the third test video.', 40000);
+    await uploadVideo('./final_4.mp4', 'Test Video 4', 'This is the fourth test video.', 60000);
+    await uploadVideo('./final_5.mp4', 'Test Video 5', 'This is the fifth test video.', 80000);
+    
+    res.send('All videos have been scheduled for upload.');
   } catch (error) {
-    console.error("Error uploading video:", error);
-    res.status(500).send("Failed to upload video");
+    res.status(500).send('Failed to upload one or more videos.');
   }
 })
-
+ 
 // Saving series data
 app.post("/series", async (req,res) => {
   const {destination, content, narrator, language, duration, userEmail} = req.body;
@@ -345,38 +461,7 @@ async function uploadVideoLinkToMongoDB(videoLink) {
 
   // Usage example
   async function test(seriesId) {
-  // const generatedFiles = [
-  //   {
-  //     audio: 'output_2024-04-30T04-54-22.183Z.mp3',
-  //     captions: 'output_2024-04-30T04-54-22.183Z.srt',
-  //     image: 'image_1.jpg',
-  //     duration: 2.533875
-  //   },
-  //   {
-  //     audio: 'output_2024-04-30T04-54-25.574Z.mp3',
-  //     captions: 'output_2024-04-30T04-54-25.574Z.srt',
-  //     image: 'image_2.jpg',
-  //     duration: 10.762438
-  //   },
-  //   {
-  //     audio: 'output_2024-04-30T04-54-34.664Z.mp3',
-  //     captions: 'output_2024-04-30T04-54-34.664Z.srt',
-  //     image: 'image_3.jpg',
-  //     duration: 12.852188
-  //   },
-  //   {
-  //     audio: 'output_2024-04-30T04-54-45.091Z.mp3',
-  //     captions: 'output_2024-04-30T04-54-45.091Z.srt',
-  //     image: 'image_4.jpg',
-  //     duration: 4.623625
-  //   },
-  //   {
-  //     audio: 'output_2024-04-30T04-54-49.328Z.mp3',
-  //     captions: 'output_2024-04-30T04-54-49.328Z.srt',
-  //     image: 'image_5.jpg',
-  //     duration: 12.773875
-  //   }
-  // ]
+  
   const videoFilePath = path.join(__dirname, 'concatFile.mp4');
   let cloudinaryLink;
     try {
@@ -418,38 +503,6 @@ async function uploadVideoLinkToMongoDB(videoLink) {
     }
   }
   
-//   async function fetchAllDataFromMidjourneyImages() {
-//     const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
-//       const client = new MongoClient(uri);
-
-//     try {
-//         // Connect to the MongoDB cluster
-//         await client.connect();
-//         const db = client.db();
-//         const collection = db.collection('MidjourneyImages');
-
-//         // Fetch all documents from the collection
-//         // const documents = await collection.find({seriesId:'6634cf9ad1792b03f41b0038' }).toArray();
-//         const seriesId = '6634cf9ad1792b03f41b0038'; 
-//         // Count the documents that match the seriesId
-//         const count = await collection.countDocuments({ seriesId: seriesId });
-        
-//         // Log the count
-//         console.log(`There are ${count} documents in the MidjourneyImages collection with seriesId '${seriesId}'.`);
-    
-//         // Log the documents
-//         // console.log(documents);
-//     } catch (error) {
-//         // Handle potential errors
-//         console.error("Failed to fetch data:", error);
-//     } finally {
-//         // Ensure that the client will close when you finish/error
-//         await client.close();
-//     }
-// }
-
-// fetchAllDataFromMidjourneyImages();
-
 
   // test();
   app.listen(PORT, () => {

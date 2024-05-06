@@ -2,33 +2,69 @@ import  { useContext,useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { AuthContext } from '../provider/AuthProvider';
 import axios from 'axios';
+import Loading from '../components/Loading';
 
 const View = () => {
   const { userPlan, loading, setLoading } = useContext(AuthContext);
   const [seriesData, setSeriesData] = useState([]);
-
-console.log(seriesData)
+  const [googleId, setGoogleId] = useState("")
+console.log('google id', googleId)
+  if(loading){
+    <Loading/>
+  }
+console.log('seried data', seriesData)
   useEffect(() => {
     const fetchSeriesData = async () => {
+      setLoading(true)
       try {
-        const response = await axios.get(`https://3000-baitech365-aividedit-1tshd2b1yqy.ws-us110.gitpod.io/series_info?email=${userPlan.email}`);
-        setSeriesData(response.data);
+        const response = await axios.get(`https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/series_info?email=${userPlan?.email}`);
+        setSeriesData(response?.data);
       } catch (error) {
         console.error(error);
+      } finally {
+        setLoading(false)
       }
     };
     fetchSeriesData();
-  }, [userPlan.email]);
+  }, [userPlan?.email]);
+
+
+  const handleConnectYoutube = (item) => { 
+    console.log('item inside youtube connect', item)
+    window.location.href = 'https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/connect_youtube'
+   }
+
+   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const googleId = params.get('googleId');
+    if (googleId) {
+      setGoogleId(googleId);
+      console.log('Google ID:', googleId);
+      // Optionally clear the URL parameters
+      window.history.replaceState(null, null, window.location.pathname);
+    }
+  }, []);
 
 
   const handleGenerateVideo = async (item) => {
     console.log(item, item._id)
     try {
-      const response = await axios.post(`https://3000-baitech365-aividedit-1tshd2b1yqy.ws-us110.gitpod.io/generate_video`, {
-        email: userPlan.email,
+      const response = await axios.post(`https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/generate_video`, {
+        email: userPlan?.email,
         seriesId: item._id,
       });
-      console.log(response.data);
+      console.log(response?.data);
+    } catch (error) {
+      console.error(error);
+    }
+  
+  };
+  const handlePostVideo = async (item) => {
+    try {
+      const response = await axios.post(`https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/upload_video`, {
+        email: userPlan?.email,
+       });
+      console.log(response?.data);
     } catch (error) {
       console.error(error);
     }
@@ -46,16 +82,24 @@ console.log(seriesData)
       
     {
       seriesData ? (
-       seriesData.map(item => (
-        <div className='mt-10 p-8 w-full rounded-lg bg-slate-600' key={item._id}>
+       seriesData?.map(item => (
+        <div className='mt-10 p-8 w-full rounded-lg bg-slate-600' key={item?._id}>
         <p className="text-lg text-white"><span className="font-bold">Series Name:</span> {item?.content}</p>
           <p className="text-lg text-white"><span className="font-bold">Language:</span> {item?.language}</p>
           <p className="text-lg text-white"><span className="font-bold">Video Duration: </span> {item?.duration}</p>
           <p className="text-lg text-white"><span className="font-bold">Narrator: </span> {item?.narrator}</p>
           <p className="text-lg text-white pb-10"><span className="font-bold">Send Type: </span> {item?.destination}</p>
-          <button className='bg-gradient-to-r from-primary to-blue-700 text-white py-3 px-6 text-lg rounded-lg font-semibold '
+      <div className='flex justify-start items-center gap-10 flex-col md:flex-row'>
+      <button className='block bg-gradient-to-r from-primary to-blue-700 text-white py-3 px-6 text-lg rounded-lg font-semibold '
+          onClick={() => handleConnectYoutube(item)}
+          >CONNECT YOUTUBE ACCOUNT</button>
+          <button className='bg-gradient-to-r block from-primary to-blue-700 text-white py-3 px-6 text-lg rounded-lg font-semibold '
           onClick={() => handleGenerateVideo(item)}
           >GENERATE VIDEO</button>
+          <button className='bg-gradient-to-r block from-primary to-blue-700 text-white py-3 px-6 text-lg rounded-lg font-semibold '
+          onClick={() => handlePostVideo(item)}
+          >POST VIDEO</button>
+      </div>
         </div>
        ))
       ) : (
