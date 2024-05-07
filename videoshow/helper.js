@@ -30,11 +30,11 @@ async function generateVoice(text) {
         const folderPath = path.join(__dirname, 'examples'); // Folder path
         const audioFileName = `output_${timestamp}.mp3`; // Unique audio filename with timestamp
         const audioFilePath = path.join(folderPath, audioFileName);
-        const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/y1adqrqs4jNaANXsIZnD', options);
+        const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/29vD33N1CtxCmqQRPOHJ', options);
         console.log('elevan lab res', response)
         const buffer = await response.arrayBuffer();
         const data = Buffer.from(buffer);
-        fs.mkdirSync(folderPath, { recursive: true }); // Create the folder if it doesn't exist
+        // fs.mkdirSync(folderPath, { recursive: true }); // Create the folder if it doesn't exist
         fs.writeFileSync(audioFilePath, data);
         console.log('MP3 file has been saved.');
 

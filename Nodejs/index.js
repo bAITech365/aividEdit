@@ -36,7 +36,7 @@ cloudinary.config({
 const app = express();
 app.use(bodyParser.json());
 app.use(cors({
-  origin: ['https://5173-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io'],
+  origin: ['https://5173-baitech365-aividedit-q7iuauhiu1c.ws-us110.gitpod.io'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   headers: ['Content-Type', 'Authorization']
 }));
@@ -65,7 +65,7 @@ const seriesCollection = db.collection('series');
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REDIRECT_URI = `https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/oauth2callback`;
+const REDIRECT_URI = `https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us110.gitpod.io/oauth2callback`;
 const oAuth2Client = new google.auth.OAuth2(
   CLIENT_ID,
   CLIENT_SECRET,
@@ -131,7 +131,7 @@ app.get("/oauth2callback", async (req, res) => {
       console.log('Inserted document:', insertResult);
     }
 
-    res.redirect(`https://5173-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/dashboard?googleId=${decoded.sub}`); // Redirect back to the frontend
+    res.redirect(`https://5173-baitech365-aividedit-q7iuauhiu1c.ws-us110.gitpod.io/dashboard?googleId=${decoded.sub}`); // Redirect back to the frontend
   } catch (error) {
     console.error('Error retrieving access token', error);
     res.status(500).send('Authentication failed');
@@ -348,21 +348,24 @@ app.post('/generate_video', async(req, res) =>{
         GetStoriesList: channel.Motivation.GetStoriesList.replace('{topicName}', topic).replace('{topicCount}', '1')
       }
     };
-    // const topicId = 'fb74511f-e722-4e98-b401-deba05694b1a'
+    const topicId = 'bc51336c-2602-48c8-8c5b-57cb4b889718'
     const chatGPTAPI = await ensureChatGPTAPI();
     if (chatGPTAPI) {
-      const topicId = await main(modifiedChannel, seriesId);
-      // await cronJob(); // Wait for the cron job to finish
-      console.log('topic id inside the generate video function', topicId)
-  const generatedVideo = await test(topicId)
-      console.log('generate video cloul link', generatedVideo)
+      // const topicId = await main(modifiedChannel, seriesId);
+      // console.log('topic id inside the generate video function', topicId)
+  // const generatedVideo = await test(topicId)
+      // console.log('generate video cloul link', generatedVideo)
   // YOUTUBE FUNCTIONALITY
   const tokens = await userCollection.findOne({googleId : seriesData.googleId})
+  if (!tokens) {
+    console.error("No tokens found for the given Google ID.");
+    return;
+  }
       oAuth2Client.setCredentials({
         access_token: tokens.accessToken,
         refresh_token: tokens.refreshToken,
       });
-     
+     console.log('oauth', oAuth2Client)
       const youtube = google.youtube({
         version: 'v3',
         auth: oAuth2Client,
@@ -370,49 +373,31 @@ app.post('/generate_video', async(req, res) =>{
   const output = path.join(__dirname, 'concatFile.mp4');
   const MidjourneyImagesCollection = db.collection('MidjourneyImages');
   const title = await MidjourneyImagesCollection.findOne({ topicId }, { projection: { topic: 1, _id: 0 } })
-  //     // Helper function to upload a video
-      async function uploadVideo(filePath, title, description, delay) {
-        return new Promise((resolve, reject) => {
-          setTimeout(async () => {
-            try {
-              const response = await youtube.videos.insert({
-                part: 'snippet,status',
-                requestBody: {
-                  snippet: {
-                    title: title,
-                    // description: description,
-                  },
-                  status: {
-                    privacyStatus: 'private',
-                  },
-                },
-                media: {
-                  body: fs.createReadStream(filePath),
-                },
-              });
-              console.log(`Video uploaded with ID: ${response.data.id} on ${new Date().toLocaleString()}`);
-              resolve(response.data.id); // Resolve the promise with the video ID
-            } catch (error) {
-              console.error('Failed to upload video:', error);
-              reject(error); // Reject the promise on error
-            }
-          }, delay);
-        });
-      }
-      
-      try {
-        // Upload videos sequentially with a two-minute interval between each
-        await uploadVideo('./final_1.mp4', 'Test Video 1', 'This is the first test video.', 0);
-        await uploadVideo('./final_2.mp4', 'Test Video 2', 'This is the second test video.', 20000);
-        await uploadVideo('./final_3.mp4', 'Test Video 3', 'This is the third test video.', 40000);
-        await uploadVideo('./final_4.mp4', 'Test Video 4', 'This is the fourth test video.', 60000);
-        await uploadVideo('./final_5.mp4', 'Test Video 5', 'This is the fifth test video.', 80000);
-        
-        res.send('All videos have been scheduled for upload.');
-      } catch (error) {
-        res.status(500).send('Failed to upload one or more videos.');
-      }
-  console.log('final output', generatedVideo)
+  console.log('tittle', title.topic)
+  try {
+    const response = await youtube.videos.insert({
+      part: 'snippet,status',
+      requestBody: {
+        snippet: {
+          title: title.topic,
+          // description: description,
+        },
+        status: {
+          privacyStatus: 'private',
+        },
+      },
+      media: {
+        body: fs.createReadStream(output),
+      },
+    });
+    console.log('youtube res', response)
+    console.log(`Video uploaded with ID: ${response.data.id} on ${new Date().toLocaleString()}`);
+  
+  } catch (error) {
+    console.error('Failed to upload video:', error);
+  }
+  
+  // console.log('final output', generatedVideo)
   } else {
       console.error("Failed to initialize ChatGPTAPI");
   }
