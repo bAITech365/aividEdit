@@ -11,7 +11,7 @@ async function generateVoice(text) {
         headers: {
             'Accept': 'audio/mpeg',
             'Content-Type': 'application/json',
-            'xi-api-key': '97e9341b7417e535fdc4acc3c7668437'
+            'xi-api-key': 'ca1d85200318925fd4d3937c3db1669c'
         },
         body: JSON.stringify({
             text: text,

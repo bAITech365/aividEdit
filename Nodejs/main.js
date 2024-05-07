@@ -135,7 +135,7 @@ async function main(modifiedChannel, seriesId) {
   let storyDetails = await helper.GPTRunForEach(modifiedChannel.Motivation.ExplainStory,'{O1}',stories);
       console.log('storyDetails in main',storyDetails);
 
-     let Midjourneyprompts= await helper.GPTRunForEach(modifiedChannel.Motivation.MidjourneyRunPrompt,'{O1}',storyDetails);
+     let Midjourneyprompts= await helper.GPTRunForEach(modifiedChannel.Motivation.MidjourneyRunPrompt,'{O2}',storyDetails);
 
      console.log('Midjourneyprompts main',Midjourneyprompts);
 
