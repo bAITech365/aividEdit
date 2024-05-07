@@ -5,26 +5,29 @@ import { AuthContext } from '../provider/AuthProvider';
 const Register = () => {
     
   const navigate = useNavigate()
-    const location = useLocation()
+    // const location = useLocation()
     const { googleSignIn} = useContext(AuthContext)
  
 
 
-  const handleGoogleSignIn = () => {
-    googleSignIn()
-    .then(result => {
-      console.log(result)
-      if(result.user.email){
-      
-        navigate(location?.state ? location.state : '/dashboard')
-      }
-    })
-    .catch(error => {
-      if(error){
-      console.log(`Error in google login ${error}`)
-      }
-    })
-  }
+    const handleGoogleSignIn = () => {
+      googleSignIn()
+        .then(result => {
+          console.log(result);
+          if (result.user.email) {
+            // Save user data to local storage
+            localStorage.setItem('user', JSON.stringify(result.user));
+    
+            navigate('/dashboard');
+          }
+        })
+        .catch(error => {
+          if (error) {
+            console.log(`Error in google login ${error}`);
+          }
+        });
+    };
+    
 
   return (
    <div>

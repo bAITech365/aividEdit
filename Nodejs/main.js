@@ -114,18 +114,20 @@ async function downloadVideo(url, outputPath) {
   //   }
   // ];
 
+  //  console.log(channel.Motivation.GetStoriesList);
+  // let x = channel.Motivation.GetStoriesList.replace("{topicCount}", "{1}");
+  // let y = x.replace("{topicName}", "{user}");
+  //   let stories=await helper.GPTRun(y);
+
+  // let stories=await JSON.parse(result);
 
 
 async function main(modifiedChannel, seriesId) {
+  console.log('series id inside main ', seriesId)
   //return;
   console.log('modified channel inside main', modifiedChannel)
     try {
-      //  console.log(channel.Motivation.GetStoriesList);
-      // let x = channel.Motivation.GetStoriesList.replace("{topicCount}", "{1}");
-      // let y = x.replace("{topicName}", "{user}");
-      //   let stories=await helper.GPTRun(y);
       let stories=await helper.GPTRun(modifiedChannel.Motivation.GetStoriesList);
-        // let stories=await JSON.parse(result);
           console.log('stories',stories);
   //      console.log(result);
 
@@ -133,12 +135,13 @@ async function main(modifiedChannel, seriesId) {
   let storyDetails = await helper.GPTRunForEach(modifiedChannel.Motivation.ExplainStory,'{O1}',stories);
       console.log('storyDetails in main',storyDetails);
 
-     let Midjourneyprompts= await helper.GPTRunForEach(modifiedChannel.Motivation.MidjourneyRunPrompt,'{O2}',storyDetails);
+     let Midjourneyprompts= await helper.GPTRunForEach(modifiedChannel.Motivation.MidjourneyRunPrompt,'{O1}',storyDetails);
 
      console.log('Midjourneyprompts main',Midjourneyprompts);
 
+     let topicId = uuidv4(); 
     Midjourneyprompts.forEach((prompt) => {
-      prompt.uid = uuidv4(); // Generate a UUID for uid field
+      prompt.topicId = topicId;
       prompt.status = "Notstarted";
       prompt.seriesId = seriesId
   });
@@ -146,24 +149,67 @@ async function main(modifiedChannel, seriesId) {
 
     await helper.bulkInsertDocuments("MidjourneyImages", Midjourneyprompts);
 
-    await cronJob(seriesId);
+    const job = cron.schedule('*/20 * * * * *', async () => {
+      await cronJob(seriesId); 
+    });
     // let channelTags=await GPTRunForEach(modifiedChannel.Motivation.SocailTags,'O1',stories);
+// Wait for all images to reach a final state (example: "finished")
+await waitForAllImagesToFinish(seriesId, job);
 
-
-
-
+// Stop the cron job after completion
+job.stop();
     // let FinalMovies=await CloudinaryForEach(images,storyDetails,channel.Motivation.CloudinaryConfig,channelTags);
-
+    return topicId;
     } catch (error) {
         console.error('Error in main function:', error);
+        return null;
     }
+}
+
+async function waitForAllImagesToFinish(seriesId, job, timeout = 600000) {
+  const startTime = Date.now();
+  const checkInterval = 2000; // check every 5 seconds
+
+  return new Promise(async (resolve, reject) => {
+    const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
+    let client = new MongoClient(uri);
+    async function dbConnect() {
+      if (!client) {
+        client = await MongoClient.connect(uri);
+      }
+      return client.db();
+    }
+      const checkCompletion = async () => {
+          try {
+              const db = await dbConnect();
+              const collection = db.collection('MidjourneyImages');
+              const count = await collection.countDocuments({ seriesId: seriesId, status: { $ne: "finished" } });
+
+              if (count === 0) {
+                  console.log("All images are processed and finished.");
+                  job.stop(); // Stop the cron job if all images are finished.
+                  resolve();
+              } else if (Date.now() - startTime > timeout) {
+                  console.log("Timeout reached while waiting for images to finish.");
+                  job.stop(); // Stop the cron job in case of timeout.
+                  reject(new Error("Timeout reached"));
+              } else {
+                  setTimeout(checkCompletion, checkInterval); // Schedule the next check.
+              }
+          } catch (error) {
+              console.error("Error checking image completion status:", error);
+              reject(error);
+          }
+      };
+
+      setTimeout(checkCompletion, checkInterval); // Initial check after the first interval.
+  });
 }
 
 
 
-
 async function cronJob(seriesId) {
-  console.log(`  `);
+  console.log(`seried id inside cron job`, seriesId);
   console.log('Running cron job...' ,new Date());
   try {
 
@@ -179,17 +225,19 @@ async function dbConnect() {
       const collection = db.collection('MidjourneyImages');
 
       // Find documents with status "Notstarted"
-      const notStartedImages = await collection.find({ status: "Notstarted", seriesId: seriesId }).limit(2).toArray();
-      const inProgressImages = await collection.find({ status: "InProgess", seriesId: seriesId }).limit(2).toArray();
-      const upscalePendingImages = await collection.find({ status: "upscalePending", seriesId: seriesId }).limit(2).toArray();
+      const notStartedImages = await collection.find({ status: "Notstarted", seriesId: seriesId}).limit(2).toArray();
+      const inProgressImages = await collection.find({ status: "InProgess", seriesId: seriesId}).limit(2).toArray();
+      const upscalePendingImages = await collection.find({ status: "upscalePending", seriesId: seriesId}).limit(2).toArray();
       // Process each image 
-   
+      console.log('Before NotStarted')  
       for (const image of notStartedImages) {
-          await waitRandom(4000);
+        console.log('NotStarted')  
+        await waitRandom(4000);
           const prompt = image.prompt;
           console.log(`Generating image for ${image._id} ..  ${prompt}...`);
           const task_id = await helper.generateImage(prompt);
           console.log(task_id);
+          
           // Update the status to "InProgess"
           if(task_id)
           { await collection.updateOne({ _id: image._id }, { $set: { status: "InProgess",task_id:task_id } });}
@@ -233,9 +281,9 @@ async function dbConnect() {
   }
 }
 
-cron.schedule('*/20 * * * * *', async () => {
-  await cronJob(); // Wait for the cron job to finish
-});
+// cron.schedule('*/20 * * * * *', async () => {
+//   await cronJob(); 
+// });
 
 // cron.schedule('*/20 * * * * *', async () => {
 //   console.log(`

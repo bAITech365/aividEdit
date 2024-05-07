@@ -14,20 +14,25 @@ const AuthProvider = ({children}) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [userPlan, setUserPlan] = useState(null)
-  console.log('user in auth', user)
-  console.log('user plan in auth', userPlan)
+  // console.log('user in auth', user)
+  // console.log('user plan in auth', userPlan)
   const googleSignIn = () => {
-  
-    return signInWithPopup(auth, googleProvider)
+      return signInWithPopup(auth, googleProvider)
   }
   const logOut = () => {
-    setLoading(true)
+    localStorage.removeItem('user');
     return signOut(auth)
   }
 
   useEffect(() => {
     const unSubscribe = onAuthStateChanged(auth, (currentUser => {
-      setUser(currentUser)
+      if (currentUser) {
+        localStorage.setItem('user', JSON.stringify(currentUser));
+        setUser(currentUser);
+      } else {
+        localStorage.removeItem('user');
+        setUser(null);
+      }
       setLoading(false);
     }))
 
@@ -35,16 +40,21 @@ const AuthProvider = ({children}) => {
       unSubscribe()
     }
   },[])
+
+  useEffect(() => {
+    const localUser = localStorage.getItem('user');
+    if (localUser) {
+      setUser(JSON.parse(localUser));
+    }
+  }, []);
   
-  if(loading){
-    <Loading/>
-  }
+  
 console.log(user?.email)
 // Getting user data in the database
 const getUserData = async (userData) => { 
     try {
       setLoading(true)
-        const response = await axios.post(`https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/user`, userData)
+        const response = await axios.post(`https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/user`, userData)
         const data = await response?.data;
         console.log('res', response)
         if(data?.email){
@@ -67,7 +77,9 @@ const getUserData = async (userData) => {
     }
   }, [user, userPlan])
 
-
+  // if(loading){
+  //   return <Loading/>
+  // }
 
   const authInfo = {
     user, 

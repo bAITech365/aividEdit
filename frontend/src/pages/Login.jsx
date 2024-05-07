@@ -4,31 +4,35 @@ import { AuthContext } from "../provider/AuthProvider";
 
 const Login = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  console.log(location, location.state)
+  // const location = useLocation();
+  // console.log(location, location.state)
 
   const { googleSignIn, setLoading } = useContext(AuthContext);
 
  
 
   const handleGoogleSignIn = () => {
-    setLoading(true)
+    setLoading(true);
     googleSignIn()
       .then((result) => {
         console.log(result);
         if (result.user.email) {
-          navigate(location?.state ? location.state : "/dashboard");
-          setLoading(false)
+          // Set user data in local storage
+          localStorage.setItem('user', JSON.stringify(result.user));
+          navigate('/dashboard')
+          // navigate(location?.state ? location.state : "/dashboard");
+          setLoading(false);
         }
-        setLoading(false)
+        setLoading(false);
       })
       .catch((error) => {
         if (error) {
           console.log(`Error in google login ${error}`);
-          setLoading(false)
+          setLoading(false);
         }
       });
   };
+  
 
   return (
     <div>

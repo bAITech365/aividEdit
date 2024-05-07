@@ -7,17 +7,16 @@ import Loading from '../components/Loading';
 const View = () => {
   const { userPlan, loading, setLoading } = useContext(AuthContext);
   const [seriesData, setSeriesData] = useState([]);
-  const [googleId, setGoogleId] = useState("")
-console.log('google id', googleId)
-  if(loading){
-    <Loading/>
-  }
+  const [googleId, setGoogleId] = useState('');
+    const [taskId, setTaskId] = useState('');
+console.log('google and task id', googleId, taskId)
+
 console.log('seried data', seriesData)
   useEffect(() => {
     const fetchSeriesData = async () => {
       setLoading(true)
       try {
-        const response = await axios.get(`https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/series_info?email=${userPlan?.email}`);
+        const response = await axios.get(`https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/series_info?email=${userPlan?.email}`);
         setSeriesData(response?.data);
       } catch (error) {
         console.error(error);
@@ -30,26 +29,51 @@ console.log('seried data', seriesData)
 
 
   const handleConnectYoutube = (item) => { 
-    console.log('item inside youtube connect', item)
-    window.location.href = 'https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/connect_youtube'
+    console.log('item inside youtube connect', item._id)
+    sessionStorage.setItem('taskId', item._id); 
+    window.location.href = 'https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/connect_youtube'
    }
 
    useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const googleId = params.get('googleId');
-    if (googleId) {
-      setGoogleId(googleId);
-      console.log('Google ID:', googleId);
-      // Optionally clear the URL parameters
-      window.history.replaceState(null, null, window.location.pathname);
+    
+    const updateGoogleIdInDB = async () => {
+      // Extracting googleId from URL
+      const params = new URLSearchParams(window.location.search);
+      const googleIdFromUrl = params.get('googleId');
+      if (googleIdFromUrl) {
+          setGoogleId(googleIdFromUrl);
+          console.log('Google ID:', googleIdFromUrl);
+          window.history.replaceState(null, null, window.location.pathname);
+      }
+
+      const taskIdFromStorage = sessionStorage.getItem('taskId');
+      if (taskIdFromStorage) {
+          setTaskId(taskIdFromStorage);
+          console.log('Task ID from session storage:', taskIdFromStorage);
+      }
+
+      if (googleIdFromUrl && taskIdFromStorage) {
+        try {
+            const response = await axios.patch(`https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/googleId?taskId=${taskIdFromStorage}`, {
+                googleId: googleIdFromUrl
+            });
+            console.log('Server response for patch:', response.data);
+        } catch (error) {
+            console.error('Error making PATCH request:', error);
+        }
     }
-  }, []);
+  }
+  updateGoogleIdInDB();
+}, []);
+
+
 
 
   const handleGenerateVideo = async (item) => {
     console.log(item, item._id)
     try {
-      const response = await axios.post(`https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/generate_video`, {
+      const response = await axios.post(`https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/generate_video`, {
         email: userPlan?.email,
         seriesId: item._id,
       });
@@ -61,7 +85,7 @@ console.log('seried data', seriesData)
   };
   const handlePostVideo = async (item) => {
     try {
-      const response = await axios.post(`https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/upload_video`, {
+      const response = await axios.post(`https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/upload_video`, {
         email: userPlan?.email,
        });
       console.log(response?.data);

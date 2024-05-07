@@ -36,8 +36,8 @@ cloudinary.config({
 const app = express();
 app.use(bodyParser.json());
 app.use(cors({
-  origin: ['https://5173-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: ['https://5173-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   headers: ['Content-Type', 'Authorization']
 }));
 cloudinary.config({
@@ -65,7 +65,7 @@ const seriesCollection = db.collection('series');
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REDIRECT_URI = `https://3000-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/oauth2callback`;
+const REDIRECT_URI = `https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/oauth2callback`;
 const oAuth2Client = new google.auth.OAuth2(
   CLIENT_ID,
   CLIENT_SECRET,
@@ -131,7 +131,7 @@ app.get("/oauth2callback", async (req, res) => {
       console.log('Inserted document:', insertResult);
     }
 
-    res.redirect(`https://5173-baitech365-aividedit-gehq1njie6s.ws-us110.gitpod.io/dashboard?googleId=${decoded.sub}`); // Redirect back to the frontend
+    res.redirect(`https://5173-baitech365-aividedit-q7iuauhiu1c.ws-us113.gitpod.io/dashboard?googleId=${decoded.sub}`); // Redirect back to the frontend
   } catch (error) {
     console.error('Error retrieving access token', error);
     res.status(500).send('Authentication failed');
@@ -184,17 +184,17 @@ async function deleteUserById(id) {
 // Usage
 // deleteUserById(new ObjectId('6638b185b195df46e450ee01'));
 
-async function userEmail() {
-  const email = 'enayetflweb.com'
-  const user = await userCollection.find().toArray();
+// async function userEmail() {
+//   const email = 'enayetflweb.com'
+//   const user = await userCollection.find().toArray();
     
-  if (user && user.length > 0) {
-    console.log('Users found:', user);
-  } else {
-    console.log('No user found with that email');
-  }
-}
-userEmail()
+//   if (user && user.length > 0) {
+//     console.log('Users found:', user);
+//   } else {
+//     console.log('No user found with that email');
+//   }
+// }
+// userEmail()
 
 app.post("/upload_video",  async (req, res) => {
   const { email } = req.body;
@@ -283,6 +283,40 @@ app.post("/series", async (req,res) => {
 
 })
 
+// Define the PATCH route
+app.patch("/googleId", async (req, res) => {
+  console.log('PATCH ROUTE HIT')
+  const taskId = req.query.taskId;  // Accessing taskId from query parameters
+  const { googleId } = req.body;  // Destructuring to extract googleId from request body
+  console.log('PATCH ROUTE HIT', googleId, taskId)
+
+  try {
+      // Update document in MongoDB
+    const result = await seriesCollection.updateOne(
+        { _id: new ObjectId(taskId) }, 
+        { $set: { googleId: googleId } }
+    );
+
+    if (result.matchedCount === 0) {
+        return res.status(404).send({
+            message: "No task found with that ID",
+            status: "fail"
+        });
+    }
+
+    console.log(`Updated task ${taskId} with new Google ID: ${googleId}`);
+    res.send({
+        message: `Task ${taskId} has been updated with new Google ID: ${googleId}`,
+        status: "success"
+    });
+} catch (error) {
+    console.error(`Error updating task ${taskId}:`, error);
+    res.status(500).send({
+        message: `Error updating task with ID ${taskId}`,
+        status: "error"
+    });
+}
+});
 // Getting series info
 app.get('/series_info', async (req, res) => {
   const email = req.query.email;
@@ -298,6 +332,7 @@ app.get('/series_info', async (req, res) => {
 
 app.post('/generate_video', async(req, res) =>{
   const {email,seriesId} = req.body;
+  console.log('email and series id', email, seriesId)
   const seriesData = await seriesCollection.findOne({ _id: new ObjectId(seriesId) });
 
   if (seriesData) {
@@ -310,14 +345,17 @@ app.post('/generate_video', async(req, res) =>{
       ...channel,  // Spread the existing channel object
       Motivation: {
         ...channel.Motivation,  
-        GetStoriesList: channel.Motivation.GetStoriesList.replace('{topicName}', topic).replace('{topicCount}', '5')
+        GetStoriesList: channel.Motivation.GetStoriesList.replace('{topicName}', topic).replace('{topicCount}', '1')
       }
     };
+    const topicId = 'fb74511f-e722-4e98-b401-deba05694b1a'
     const chatGPTAPI = await ensureChatGPTAPI();
     if (chatGPTAPI) {
-      await main(modifiedChannel, seriesId);
-  // await cronJob(); // Wait for the cron job to finish
-  const generatedVideo = await test(seriesId)
+      // const topicId = await main(modifiedChannel, seriesId);
+      // await cronJob(); // Wait for the cron job to finish
+      // console.log('topic id inside the generate video function', topicId)
+  const generatedVideo = await test(topicId)
+
   console.log('final output', generatedVideo)
   } else {
       console.error("Failed to initialize ChatGPTAPI");
@@ -351,7 +389,7 @@ async function getAudioDuration(filePath) {
 
 
 
-async function getAllMidjourneyData(seriesId) {
+async function getAllMidjourneyData(topicId) {
   try {
       const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
       const client = new MongoClient(uri);
@@ -359,7 +397,7 @@ async function getAllMidjourneyData(seriesId) {
 
       const db = client.db();
       const collection = db.collection('MidjourneyImages');
-      const documents = await collection.find({ seriesId: seriesId }).project({ _id: 0, upscaleImage_url: 1, quote: 1, topic :1 }).limit(5).toArray();
+      const documents = await collection.find({ topicId: topicId }).project({ _id: 0, upscaleImage_url: 1, quote: 1, topic :1 }).limit(5).toArray();
       
       
       console.log('midjourney data doc', documents)
@@ -439,34 +477,47 @@ async function uploadVideoToCloudinary(videoFilePath) {
   
 // Function to upload video link to mongodb
 
-async function uploadVideoLinkToMongoDB(videoLink) {
+async function uploadVideoLinkToMongoDB(videoLink, topicId) {
+  const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
+  const client = new MongoClient(uri);
   try {
-    const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
-    const client = new MongoClient(uri);
     await client.connect();
-
     const db = client.db();
     const collection = db.collection('FinalVideo');
    // Insert document with videoLink and default status
    const result = await collection.insertOne({
     videoLink: videoLink,
-    status: "review" // Default status
+    status: "review",
+    topicId: topicId
   });
   console.log(`Video link uploaded to MongoDB with ID: ${result.insertedId}`);
+  if (result.insertedId) {
+    const imageCollection = db.collection('MidjourneyImages');
+    // Update all matching documents in the MidjourneyImages collection
+    const updateResult = await imageCollection.updateMany(
+        { topicId: topicId }, // Filter documents by topicId
+        { $set: { videoStatus: "created" } } // Set new property videoStatus to "created"
+    );
+
+    console.log(`Updated ${updateResult.matchedCount} documents with videoStatus set to 'created'`);
+}
+
   } catch(error) {
     console.log(`Error uploading video link to MongoDB: ${error}`);
-  } 
+  } finally {
+    await client.close(); // Ensure that the client is closed after the operation
+}
 
 }
 
   // Usage example
-  async function test(seriesId) {
+  async function test(topicId) {
   
   const videoFilePath = path.join(__dirname, 'concatFile.mp4');
   let cloudinaryLink;
     try {
       
-    const generatedFiles = await getAllMidjourneyData(seriesId);
+    const generatedFiles = await getAllMidjourneyData(topicId);
 
       // creating video for each quote along with subtitle
      await createVideoWithGeneratedFiles(generatedFiles);
@@ -495,7 +546,7 @@ async function uploadVideoLinkToMongoDB(videoLink) {
   console.log('cludl link', cloudinaryLink)
 
       // Saving uploaded video link to the database.
-  await uploadVideoLinkToMongoDB(cloudinaryLink)
+  await uploadVideoLinkToMongoDB(cloudinaryLink, topicId)
   console.log('video file link upload complete.')
 
     } catch (error) {

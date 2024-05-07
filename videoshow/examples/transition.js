@@ -3,6 +3,13 @@ const ffmpeg = require('fluent-ffmpeg');
 const path = require('path');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffprobePath = require('@ffprobe-installer/ffprobe').path;
+ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath);
+
+
+
+console.log("ffmpeg path:", ffmpegPath);
+console.log("ffprobe path:", ffprobePath);
 
 function calculateLoopDuration(audioDuration) {
     // Assuming a loop duration of 10 seconds for every 1 second of audio
@@ -11,6 +18,11 @@ function calculateLoopDuration(audioDuration) {
 
 async function createVideoWithGeneratedFiles(generatedFiles) {
     // Define the audio path and subtitles
+    if (!generatedFiles || generatedFiles.length === 0) {
+        console.error("No generated files provided or empty array.");
+        return;  // Exit if no files to process
+    }
+    
 console.log('inside transition', generatedFiles)
 const audio = path.join(__dirname, 'song.mp3');
 
@@ -89,8 +101,7 @@ async function mergeAudioWithVideo(inputVideoPath, inputAudioPath, outputVideoPa
             });
     });
 }
-// ffmpeg.setFfmpegPath(ffmpegPath);
-// ffmpeg.setFfprobePath(ffprobePath);
+
 
 // calculating audio duration
 async function getAudioDuration(filePath) {
@@ -108,176 +119,7 @@ async function getAudioDuration(filePath) {
 }
 
 
-// async function createVideoWithGeneratedFiles(generatedFiles) {
-//     // Define the audio path and subtitles
-//     const audio = path.join(__dirname, 'song.mp3');
-//     const subtitles = path.join(__dirname, '..', 'test', 'fixtures', 'subtitles.ass');
-//     const outputDir = path.join(__dirname, '/');
-// console.log(generatedFiles)
-  // Iterate over each item in the generatedFiles array
-//   const filesWithPath = generatedFiles.map(async file => {
-//     // Create the full path for each file
-//     const audioPath = path.join(outputDir, file.audio);
-//     const captionsPath = path.join(outputDir, file.captions);
-//     const imagePath = path.join(outputDir, file.image);
-
-//     // Return an object with the file name and its corresponding path
-//     return {
-//         audio: { name: file.audio, path: audioPath, duration: await getAudioDuration(audioPath) },
-//         captions: { name: file.captions, path: captionsPath },
-//         image: { name: file.image, path: imagePath, loop: Math.floor(await getAudioDuration(audioPath))},
-//     };
-// });
-
-// Resolve all promises and log the files with their paths and durations
-
-// const resolvedFiles = await Promise.all(filesWithPath);
-// console.log('Files with paths and durations:', resolvedFiles);
-
-// Calculate the total duration of all audio files
-// const totalDuration = resolvedFiles.reduce((total, file) => total + file.audio.duration, 0);
-// console.log('Total duration of all audio files:', totalDuration);
-
-
-// Create an array to hold the transformed data
-// const transformedImages = [];
-
-// const promiseFiles = await Promise.all(filesWithPath);
-// console.log('Files with paths and durations:', promiseFiles);
-
-// Iterate over each item in resolvedFiles array
-// promiseFiles.forEach(file => {
-//     // console.log('File:', file); // Log the contents of the file object
-//     // Push an object representing each image to the transformedImages array
-//     transformedImages.push({
-//         path: file.image.path, // Path to the image file
-//         loop: file.image.loop // Loop count for the image
-//     });
-// });
-// console.log(transformedImages)
-    // Define the options for videoshow
-//     const options = {
-//         transition: true
-//     };
-// // console.log(filesWithPath)
-// const sub1= '/workspace/aividEdit/videoshow/examples/output_2024-04-29T07-15-49.035Z.srt'
-// const sub2 = '/workspace/aividEdit/videoshow/examples/output_2024-04-29T07-15-52.227Z.srt'
-//  const files = [sub1, sub2, sub1, sub2, sub1].join('|')
-
-// // Create a new instance of videoshow
-// // const video = videoshow(transformedImages, options);
-
-// // // Loop through each file in filesWithPath array
-// // resolvedFiles.forEach(file => {
-// //     // Add the subtitle to the videoshow
-// //     console.log(file.captions.path)
-// //     video.subtitles(file.captions.path); // Add subtitle for the current file
-// // });
-
-// // Then continue with other operations or event handling
-// // For example, saving the video
-// // video
-// //     .save('video2.mp4')
-// //     .on('start', function (command) {
-// //         console.log('ffmpeg process started:', command);
-// //     })
-// //     .on('error', function (err, stdout, stderr) {
-// //         console.error('Error:', err);
-// //         console.error('ffmpeg stderr:', stderr);
-// //     })
-// //     .on('end', function (output) {
-// //         console.log('Video created in:', output);
-// //     });
-
-//     // videoshow(transformedImages, options)
-//     //     .subtitles(files)
-       
-//     //     // .subtitles(sub2)
-//     // //     .audio(audio)
-//     //     .save('video1.mp4')
-//     //     .on('start', function (command) {
-//     //         console.log('ffmpeg process started:', command);
-//     //     })
-//     //     .on('error', function (err) {
-//     //         console.error('Error:', err);
-//     //     })
-//     //     .on('end', function (output) {
-//     //         console.log('Video created in:', output);
-//     //     })
-//     // //         // Call ffmpeg to add speaking audio to the video
-//     //         ffmpeg()
-//     //             .input(path.join(__dirname, '..', 'video.mp4'))
-//     //             .input(path.join(__dirname, '..', 'speaking.mp3'))
-//     //             .complexFilter([
-//     //                 '[0:a][1:a]amix=inputs=2:duration=longest'
-//     //             ])
-//     //             .videoCodec('copy') // Copy the video stream to avoid re-encoding
-//     //             .save('output.mp4')
-//     //             .on('error', function(err) {
-//     //                 console.log('Error: ' + err.message);
-//     //             })
-//     //             .on('end', function() {
-//     //                 console.log('Processing finished !');
-//     //             });
-//     //     });
-// }
 
 module.exports = {createVideoWithGeneratedFiles}
 
 
-
-// var audio = __dirname + '/song.mp3'
-// var subtitles = __dirname + '/../test/fixtures/subtitles.ass'
-
-// var options = {
-//   transition: true
-// }
-
-// var images = [
-//   {
-//     path: __dirname + '/../test/fixtures/step_1.png',
-//     loop: 10
-//   }, {
-//     path: __dirname + '/../test/fixtures/step_2.png',
-//     loop: 15
-//   }, {
-//     path: __dirname + '/../test/fixtures/step_3.png',
-//     // transitionColor: '0xFF66C7'
-//   }, {
-//     path: __dirname + '/../test/fixtures/step_4.png',
-//     // transition: false,
-//     // transitionColor: 'red'
-//   }, {
-//     path: __dirname + '/../test/fixtures/step_5.png',
-//     // transition: false
-//   }
-// ]
-
-// videoshow(images, options)
-//   .subtitles(subtitles)
-//   .audio(audio)
-//   .save('video.mp4')
-//   .on('start', function (command) {
-//     console.log('ffmpeg process started:', command)
-//   })
-//   .on('error', function (err) {
-//     console.error('Error:', err)
-//   })
-//   .on('end', function (output) {
-//     console.log('Video created in:', output);
-
-// ffmpeg()
-// .input(__dirname + '/../video.mp4')
-// .input(__dirname + '/../speaking.mp3')
-// .complexFilter([
-//   '[0:a][1:a]amix=inputs=2:duration=longest'
-// ])
-// .videoCodec('copy') // Copy the video stream to avoid re-encoding
-// .save('output.mp4')
-// .on('error', function(err) {
-//   console.log('Error: ' + err.message);
-// })
-// .on('end', function() {
-//   console.log('Processing finished !');
-// });
-//   })
