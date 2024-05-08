@@ -145,7 +145,7 @@ async function main(modifiedChannel, seriesId) {
       prompt.status = "Notstarted";
       prompt.seriesId = seriesId
   });
-  
+  console.log('topic id inside main', topicId)
 
     await helper.bulkInsertDocuments("MidjourneyImages", Midjourneyprompts);
 
@@ -155,7 +155,7 @@ async function main(modifiedChannel, seriesId) {
     // let channelTags=await GPTRunForEach(modifiedChannel.Motivation.SocailTags,'O1',stories);
 // Wait for all images to reach a final state (example: "finished")
 await waitForAllImagesToFinish(seriesId, job);
-
+console.log('WAIT FOR ALL IMAGES TO FINISH WORK DONE',topicId)
 // Stop the cron job after completion
 job.stop();
     // let FinalMovies=await CloudinaryForEach(images,storyDetails,channel.Motivation.CloudinaryConfig,channelTags);
@@ -166,9 +166,9 @@ job.stop();
     }
 }
 
-async function waitForAllImagesToFinish(seriesId, job, timeout = 600000) {
+async function waitForAllImagesToFinish(seriesId, job, timeout = 900000) {
   const startTime = Date.now();
-  const checkInterval = 2000; // check every 5 seconds
+  const checkInterval = 20000; 
 
   return new Promise(async (resolve, reject) => {
     const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";

@@ -16,7 +16,7 @@ console.log('seried data', seriesData)
     const fetchSeriesData = async () => {
       setLoading(true)
       try {
-        const response = await axios.get(`https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us110.gitpod.io/series_info?email=${userPlan?.email}`);
+        const response = await axios.get(`https://3000-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/series_info?email=${userPlan?.email}`);
         setSeriesData(response?.data);
       } catch (error) {
         console.error(error);
@@ -31,7 +31,7 @@ console.log('seried data', seriesData)
   const handleConnectYoutube = (item) => { 
     console.log('item inside youtube connect', item._id)
     sessionStorage.setItem('taskId', item._id); 
-    window.location.href = 'https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us110.gitpod.io/connect_youtube'
+    window.location.href = 'https://3000-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/connect_youtube'
    }
 
    useEffect(() => {
@@ -55,7 +55,7 @@ console.log('seried data', seriesData)
 
       if (googleIdFromUrl && taskIdFromStorage) {
         try {
-            const response = await axios.patch(`https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us110.gitpod.io/googleId?taskId=${taskIdFromStorage}`, {
+            const response = await axios.patch(`https://3000-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/googleId?taskId=${taskIdFromStorage}`, {
                 googleId: googleIdFromUrl
             });
             console.log('Server response for patch:', response.data);
@@ -73,7 +73,7 @@ console.log('seried data', seriesData)
   const handleGenerateVideo = async (item) => {
     console.log(item, item._id)
     try {
-      const response = await axios.post(`https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us110.gitpod.io/generate_video`, {
+      const response = await axios.post(`https://3000-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/generate_video`, {
         email: userPlan?.email,
         seriesId: item._id,
       });
@@ -85,7 +85,7 @@ console.log('seried data', seriesData)
   };
   const handlePostVideo = async (item) => {
     try {
-      const response = await axios.post(`https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us110.gitpod.io/upload_video`, {
+      const response = await axios.post(`https://3000-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/upload_video`, {
         email: userPlan?.email,
        });
       console.log(response?.data);

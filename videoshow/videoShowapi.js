@@ -5,7 +5,6 @@ const path = require('path');
 const videoshow = require('videoshow');
 const app = express();
 const port = 3000;
-//https://3000-baitech365-aividedit-1tboc4vih7h.ws-us110.gitpod.io
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -60,7 +59,7 @@ app.post('/create-video', async (req, res) => {
       .audio(audioPath, { loop: true })
       .save('output/video.mp4')
       .on('start', command => {
-        console.log('ffmpeg process started:', command);
+        // console.log('ffmpeg process started:', command);
       })
       .on('error', (err, stdout, stderr) => {
         console.error('Error:', err);

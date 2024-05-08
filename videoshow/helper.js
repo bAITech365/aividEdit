@@ -3,7 +3,7 @@ const path = require('path');
 const { createClient, srt } = require('@deepgram/sdk');
 const deepgram = createClient('a7056d8828505c8de14a6210f133bcdb1efc21f2');
 
-async function generateVoice(text) {
+async function generateVoice(text, topicId, index) {
     const fetch = (await import('node-fetch')).default;
 
     const options = {
@@ -26,12 +26,12 @@ async function generateVoice(text) {
     };
 
     try {
-        const timestamp = new Date().toISOString().replace(/:/g, '-'); // Generate timestamp
+        const timestamp = `${topicId}_${index}`
         const folderPath = path.join(__dirname, 'examples'); // Folder path
         const audioFileName = `output_${timestamp}.mp3`; // Unique audio filename with timestamp
         const audioFilePath = path.join(folderPath, audioFileName);
         const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/29vD33N1CtxCmqQRPOHJ', options);
-        console.log('elevan lab res', response)
+        console.log('audioFileName', audioFileName)
         const buffer = await response.arrayBuffer();
         const data = Buffer.from(buffer);
         // fs.mkdirSync(folderPath, { recursive: true }); // Create the folder if it doesn't exist
@@ -39,7 +39,7 @@ async function generateVoice(text) {
         console.log('MP3 file has been saved.');
 
         const audioData = fs.readFileSync(audioFilePath);
-        console.log('Transcribing audio using Deepgram...');
+        // console.log('Transcribing audio using Deepgram...');
 
         const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
             fs.readFileSync(audioFilePath),
@@ -56,7 +56,7 @@ async function generateVoice(text) {
         const captionsFilePath = path.join(folderPath, captionsFileName);
         const stream = fs.createWriteStream(captionsFilePath, { flags: "a" });
         const captions = srt(result, 1); // SRT of 1 word in the file
-        // console.log('Captions:', captions);
+        console.log('captionsFileName:', captionsFileName);
         stream.write(captions);
         stream.end();
         // console.log('Captions file has been saved:', captionsFilePath);

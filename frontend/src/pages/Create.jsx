@@ -31,7 +31,7 @@ const Create = () => {
     }
     console.log(data)
     try {
-      const response = await axios.post('https://3000-baitech365-aividedit-q7iuauhiu1c.ws-us110.gitpod.io/series', data);
+      const response = await axios.post('https://3000-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/series', data);
       const resData = await response.data
       console.log(response)
       console.log(response.data)
@@ -43,11 +43,7 @@ const Create = () => {
 
    }
 
- 
-
-
-
-  return (
+   return (
     <div className='mb-20'>
       {/* heading */}
       <div className='pb-10'>
