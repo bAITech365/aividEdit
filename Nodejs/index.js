@@ -402,10 +402,10 @@ app.post("/generate_video", async (req, res) => {
         ).replace("{topicCount}", "1"),
       },
     };
-    const topicId = "098ffce8-5802-42ac-91a6-9c6a06b302f3";
+    // const topicId = "098ffce8-5802-42ac-91a6-9c6a06b302f3";
     const chatGPTAPI = await ensureChatGPTAPI();
     if (chatGPTAPI) {
-      // const topicId = await main(modifiedChannel, seriesId);
+      const topicId = await main(modifiedChannel, seriesId);
       console.log('topic id inside the generate video function', topicId)
       const generatedVideo = await test(topicId)
       console.log('generate video cloul link', generatedVideo)
@@ -547,8 +547,8 @@ async function uploadToYouTube(
   generatedVideo
 ) {
   // Separate function to handle YouTube uploading logic
-  console.log("New access token", accessToken);
-  console.log("oauth", oAuth2Client.credentials);
+  // console.log("New access token", accessToken);
+  // console.log("oauth", oAuth2Client.credentials);
   const {  midjourneyImageCollection } = await getCollections()
   const youtube = google.youtube({
     version: "v3",
@@ -577,7 +577,7 @@ async function uploadToYouTube(
       body: fs.createReadStream(output),
     },
   });
-  console.log("YouTube response", response);
+  // console.log("YouTube response", response);
   console.log(
     `Video uploaded with ID: ${
       response.data.id
@@ -765,7 +765,7 @@ async function uploadVideoToCloudinary(videoFilePath) {
     });
 
     // Log the result (optional)
-    console.log('Upload result:', result);
+    // console.log('Upload result:', result);
 
     return result.secure_url; // Return the secure URL of the uploaded video
   } catch (error) {
@@ -817,10 +817,12 @@ async function test(topicId, generatedFiles) {
     // const generatedFiles = await getAllMidjourneyData(topicId);
 
     // creating video for each quote along with subtitle
+    console.log('cloudinary link at starting')
     await createVideoWithGeneratedFiles(generatedFiles, topicId);
+
     console.log("All videos created and merged successfully.");
 
-    console.log("Midjourney data:", generatedFiles);
+    // console.log("Midjourney data:", generatedFiles);
 
     // concatenate all the videos to make a single video
 
@@ -829,14 +831,14 @@ async function test(topicId, generatedFiles) {
     console.log("Concatenation done for video");
     // uploading the video in cloudinary
 
-    await uploadVideoToCloudinary(videoFilePath)
-      .then((uploadedVideoUrl) => {
-        cloudinaryLink = uploadedVideoUrl;
-        console.log("Video uploaded to Cloudinary:", uploadedVideoUrl);
-      })
-      .catch((error) => {
-        console.error("Error uploading video:", error);
-      });
+    cloudinaryLink = await uploadVideoToCloudinary(videoFilePath)
+      // .then((uploadedVideoUrl) => {
+      //   cloudinaryLink = uploadedVideoUrl;
+      //   console.log("Video uploaded to Cloudinary:", uploadedVideoUrl);
+      // })
+      // .catch((error) => {
+      //   console.error("Error uploading video:", error);
+      // });
 
     console.log("cludl link", cloudinaryLink);
 
@@ -845,7 +847,8 @@ async function test(topicId, generatedFiles) {
     console.log("video file link upload complete.");
     return cloudinaryLink;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error in the test function:", error);
+    throw error; 
   }
 }
 const topicId = "098ffce8-5802-42ac-91a6-9c6a06b302f3";
@@ -882,7 +885,7 @@ const generatedFiles = [
       duration: 6.922438
     }
   ]
-test(topicId, generatedFiles);
+// test(topicId, generatedFiles);
 app.listen(PORT, () => {
   console.log(`lOCAL HOST RUNNING ON: HTTP://LOCALHOST:${PORT}`);
 });
