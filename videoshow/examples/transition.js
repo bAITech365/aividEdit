@@ -8,15 +8,12 @@ ffmpeg.setFfprobePath(ffprobePath);
 
 
 
-console.log("ffmpeg path:", ffmpegPath);
-console.log("ffprobe path:", ffprobePath);
-
 function calculateLoopDuration(audioDuration) {
-    // Assuming a loop duration of 10 seconds for every 1 second of audio
-    return Math.ceil(audioDuration);
+     return Math.ceil(audioDuration);
 }
 
-async function createVideoWithGeneratedFiles(generatedFiles) {
+async function createVideoWithGeneratedFiles(generatedFiles, topicId) {
+   
     // Define the audio path and subtitles
     if (!generatedFiles || generatedFiles.length === 0) {
         console.error("No generated files provided or empty array.");
@@ -36,56 +33,55 @@ for (let i = 0; i < generatedFiles.length; i++) {
         path: path.join(__dirname, dataset.image),
         loop: calculateLoopDuration(dataset.duration)
     }];
-    console.log(images)// Create an array with the current image
-    const outputFileName = `video_${i + 1}.mp4`; // Use a sequential number for the output file name
+    console.log('updated image', images)// Create an array with the current image
+    const outputFileName = `video_${topicId}_${i + 1}.mp4`;
 
     // Use the path specified in the caption property as the subtitle path
     const subtitles = path.join(__dirname, dataset.captions);
     const inputAudioPath = path.join(__dirname, dataset.audio);
-    const outputVideoPath = `final_${i+1}.mp4`
+    console.log('input audio path', inputAudioPath)
+    const outputVideoPath = `final_${topicId}_${i + 1}.mp4`;
+
     // Define options for videoshow
     const options = {
         transition: true
     };
 
-    // Create the video using videoshow
-    const promise = await new Promise((resolve, reject) => {
-        videoshow(images, options)
-            .subtitles(subtitles)
-            .audio(audio)
-            .save(outputFileName)
-            .on('start', function (command) {
-                console.log(`ffmpeg process started for ${outputFileName}:`, command);
+    videoshow(images, options)
+    // .subtitles(subtitles)
+    .audio(audio)
+    .save(outputFileName)
+    .on('start', function (command) {
+        console.log(`vidooshow process started for ${outputFileName}:`, command);
+    })
+    .on('error', function (err) {
+        console.error(`Error for videoshow processing ${outputFileName}:`, err);
+        // reject(err);
+    })
+    .on('end', function (output) {
+        console.log(`Video created for ${outputFileName} in:`, output);
+        // Merge audio with video after video creation
+        const inputVideoPath = path.join(__dirname, '..',  outputFileName);
+        console.log('inside videoshow. on input video file path', inputVideoPath)
+        mergeAudioWithVideo(inputVideoPath, inputAudioPath, outputVideoPath)
+            .then(outputPath => {
+                console.log('Merged video saved at:', outputPath);
+                // resolve();
             })
-            .on('error', function (err) {
-                console.error(`Error for ${outputFileName}:`, err);
-                reject(err);
-            })
-            .on('end', function (output) {
-                console.log(`Video created for ${outputFileName} in:`, output);
-                // Merge audio with video after video creation
-                const inputVideoPath = path.join(__dirname, '..', '..', 'Nodejs',  outputFileName);
-                console.log(inputVideoPath)
-                mergeAudioWithVideo(inputVideoPath, inputAudioPath, outputVideoPath)
-                    .then(outputPath => {
-                        console.log('Merged video saved at:', outputPath);
-                        resolve();
-                    })
-                    .catch(error => {
-                        console.error('Error merging audio with video:', error);
-                        reject(error);
-                    });
+            .catch(error => {
+                console.error('Error merging audio with video:', error);
+                // reject(error);
             });
     });
-    promises.push(promise);
-    // Delay for 1 second between each video creation
-    // await new Promise(resolve => setTimeout(resolve, 1000));
+
+   
 }
-return Promise.all(promises);
+
 }
 
 
 async function mergeAudioWithVideo(inputVideoPath, inputAudioPath, outputVideoPath) {
+    console.log('mergeAudioVideo', inputVideoPath, inputAudioPath, outputVideoPath)
     return new Promise((resolve, reject) => {
         ffmpeg()
             .input(inputVideoPath)
@@ -103,23 +99,8 @@ async function mergeAudioWithVideo(inputVideoPath, inputAudioPath, outputVideoPa
 }
 
 
-// calculating audio duration
-async function getAudioDuration(filePath) {
-    return new Promise((resolve, reject) => {
-        ffmpeg.ffprobe(filePath, (err, metadata) => {
-            if (err) {
-                reject(err);
-            } else {
-                const duration = metadata.format.duration;
-                // console.log('Audio duration:', duration); // Log the duration
-                resolve(duration);
-            }
-        });
-    });
-}
 
-
-
+// createVideoWithGeneratedFiles(generatedFiles, topicId)
 module.exports = {createVideoWithGeneratedFiles}
 
 

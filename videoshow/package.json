@@ -13,7 +13,8 @@
     "videoshow": "./bin/videoshow"
   },
   "scripts": {
-    "test": "make test"
+    "test": "make test",
+    "start": "./examples/transition.js"
   },
   "keywords": [
     "video",

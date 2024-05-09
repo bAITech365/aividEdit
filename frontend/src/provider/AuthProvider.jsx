@@ -54,7 +54,7 @@ console.log(user?.email)
 const getUserData = async (userData) => { 
     try {
       setLoading(true)
-        const response = await axios.post(`https://3000-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/user`, userData)
+        const response = await axios.post(`http://localhost:3000/user`, userData)
         const data = await response?.data;
         console.log('res', response)
         if(data?.email){

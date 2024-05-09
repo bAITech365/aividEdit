@@ -5,7 +5,7 @@ async function concatenateVideos(topicId) {
   fileIndices = [1, 2, 3, 4, 5]
     // Generate input video filenames dynamically based on topicId and indices
     const inputs = fileIndices.map(index =>
-      path.join(__dirname, '..', '..', 'Nodejs', `final_${topicId}_${index}.mp4`)
+      path.join(__dirname, '..', `final_${topicId}_${index}.mp4`)
     );
   console.log('inputs', inputs)
   // Input video files
@@ -36,7 +36,7 @@ async function concatenateVideos(topicId) {
       console.log(`Video concatenated successfully. Output file: ${output}`);
     }
     if (error) {
-      console.error(`Error: ${error.message}`);
+      console.error(`Error in video concat: ${error.message}`);
       return;
     }
     if (stderr) {
@@ -45,5 +45,6 @@ async function concatenateVideos(topicId) {
     }
   });
 }
-
+// const topicId = "098ffce8-5802-42ac-91a6-9c6a06b302f3";
+// concatenateVideos(topicId)
 module.exports = concatenateVideos;

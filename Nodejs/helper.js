@@ -1,11 +1,20 @@
 const axios = require('axios');
-// const {ChatGPTAPI} = require('chatgpt');
+const { connect, db, getCollections } = require('./mongoConnection');
 let ChatGPTAPI;
-// async function setupChatGPTAPI() {
-//     const module = await import('chatgpt');
-//     ChatGPTAPI = module.ChatGPTAPI;
-//       // Ensure main is called only after the import completes
-// }
+const OpenAI = require('openai');
+const fs = require('fs');
+const https = require('https');
+
+
+async function dbConnect() {
+  if (!db) {
+      const connection = await connect();
+      return connection.db; // Ensure the database instance is returned
+  }
+  return db;
+}
+
+
 
 async function setupChatGPTAPI() {
   if (!ChatGPTAPI) {
@@ -20,8 +29,7 @@ function getChatGPTAPI() {
 }
 
 
-const OpenAI = require('openai');
-const {MongoClient} = require('mongodb');
+
 
 async function GPTRun(prompt) {
  // console.log('GPTRun',prompt);
@@ -80,21 +88,25 @@ function convertMarkdownToJsonArray(markdownString) {
 }
 
 const openai = new OpenAI();
-const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
-let client = new MongoClient(uri);
-async function dbConnect() {
-  if (!client) {
-    client = await MongoClient.connect(uri);
-  }
-  return client.db();
-}
+// const uri = "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
+// let client = new MongoClient(uri, {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+//   tls: true,
+// });
+// async function dbConnect() {
+//   if (!client) {
+//     client = await MongoClient.connect(uri);
+//   }
+//   return client.db();
+// }
 async function findFromDB(collectionName, filter, returnField) {
+  const { midjourneyImageCollection} = await getCollections()
   try {
-      const db = await dbConnect();
-      if (!collectionName) throw new Error('collection not defined');
+     
       filter = filter || {};
-      const collection = db.collection(collectionName);
-      const document = await collection.findOne(filter);
+      // const collection = db.collection(collectionName);
+      const document = await midjourneyImageCollection.findOne(filter);
       if (returnField && document) {
           return _.get(document, returnField);
       } else {
@@ -106,10 +118,11 @@ async function findFromDB(collectionName, filter, returnField) {
   }
 }
 async function insertDocument(collectionName, json) {
+  const { midjourneyImageCollection } = await getCollections()
     try {
-        const db = await dbConnect(); // Ensure we have a DB connection
-        const collection = db.collection(collectionName);
-        const result = await collection.insertOne(json);
+        // const db = await dbConnect(); // Ensure we have a DB connection
+        // const collection = db.collection(collectionName);
+        const result = await midjourneyImageCollection.insertOne(json);
         console.log(`Document inserted with _id: ${result.insertedId}`);
         return result;
     } catch (error) {
@@ -119,10 +132,11 @@ async function insertDocument(collectionName, json) {
 }
 
 async function bulkInsertDocuments(collectionName, jsonArray) {
+  const { midjourneyImageCollection } = await getCollections()
     try {
-        const db = await dbConnect(); // Ensure we have a DB connection
-        const collection = db.collection(collectionName);
-        const result = await collection.insertMany(jsonArray);
+        // const db = await dbConnect(); // Ensure we have a DB connection
+        // const collection = db.collection(collectionName);
+        const result = await midjourneyImageCollection.insertMany(jsonArray);
         console.log(`${result.insertedCount} documents were inserted`);
         return result;
     } catch (error) {

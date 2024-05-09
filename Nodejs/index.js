@@ -13,7 +13,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const { google } = require("googleapis");
 require("dotenv").config();
-const { client, db } = require("./mongoConnection");
+const {  getCollections  } = require("./mongoConnection");
 const ffmpeg = require("fluent-ffmpeg");
 const cors = require("cors");
 const { updateChannel } = require("./config.js");
@@ -35,7 +35,7 @@ app.use(bodyParser.json());
 app.use(
   cors({
     origin: [
-      "https://5173-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io",
+      "http://localhost:5173",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     headers: ["Content-Type", "Authorization"],
@@ -60,22 +60,24 @@ async function ensureChatGPTAPI() {
 }
 
 const PORT = process.env.PORT || 3000;
-const userCollection = db.collection("user");
-const seriesCollection = db.collection("series");
+// const db = await connect();
+// const userCollection = db.collection("user");
+// const seriesCollection = db.collection("series");
+// const scheduleCollection = db.collection("video_schedules");
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REDIRECT_URI = `https://3000-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/oauth2callback`;
+const REDIRECT_URI = `http://localhost:3000/oauth2callback`;
 const oAuth2Client = new google.auth.OAuth2(
   CLIENT_ID,
   CLIENT_SECRET,
   REDIRECT_URI
 );
 
+// funciton for getting refresh token
 async function refreshAccessToken(refreshToken) {
-  
   oAuth2Client.setCredentials({
-    refresh_token: refreshToken
+    refresh_token: refreshToken,
   });
 
   try {
@@ -83,12 +85,10 @@ async function refreshAccessToken(refreshToken) {
     const accessToken = accessTokenResponse.token;
     return accessToken;
   } catch (error) {
-    console.error('Failed to refresh access token:', error);
-    throw new Error('Failed to refresh access token');
+    console.error("Failed to refresh access token:", error);
+    throw new Error("Failed to refresh access token");
   }
 }
-
-
 
 app.get("/connect_youtube", (req, res) => {
   const state = crypto.randomBytes(20).toString("hex");
@@ -115,6 +115,7 @@ app.get("/connect_youtube", (req, res) => {
 app.get("/oauth2callback", async (req, res) => {
   const { code } = req.query;
   // console.log('code callback', code)
+  const { userCollection} = await getCollections()
   try {
     const { tokens } = await oAuth2Client.getToken(code);
     // console.log('tokens', tokens)
@@ -152,7 +153,7 @@ app.get("/oauth2callback", async (req, res) => {
     }
 
     res.redirect(
-      `https://5173-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/dashboard?googleId=${decoded.sub}`
+      `http://localhost:5173/dashboard?googleId=${decoded.sub}`
     ); // Redirect back to the frontend
   } catch (error) {
     console.error("Error retrieving access token", error);
@@ -162,6 +163,7 @@ app.get("/oauth2callback", async (req, res) => {
 
 // Saving and getting user login, plan data
 app.post("/user", async (req, res) => {
+  const { userCollection } = await getCollections()
   const { email } = req.body;
   console.log(email);
   const existingUser = await userCollection.findOne({ email });
@@ -184,10 +186,9 @@ app.post("/user", async (req, res) => {
   }
 });
 
-
 app.post("/upload_video", async (req, res) => {
   const { email } = req.body;
-
+  const { userCollection } = await getCollections()
   const user = await userCollection.findOne({ email });
   if (!user) {
     return res.status(404).send("User not found");
@@ -280,7 +281,7 @@ app.post("/upload_video", async (req, res) => {
 app.post("/series", async (req, res) => {
   const { destination, content, narrator, language, duration, userEmail } =
     req.body;
-
+    const { seriesCollection} = await getCollections()
   console.log("data received from the frontend", req.body);
   try {
     const result = await seriesCollection.insertOne({
@@ -301,9 +302,9 @@ app.post("/series", async (req, res) => {
 
 // Define the PATCH route
 app.patch("/googleId", async (req, res) => {
-  const taskId = req.query.taskId; 
-  const { googleId } = req.body; 
-
+  const taskId = req.query.taskId;
+  const { googleId } = req.body;
+  const { seriesCollection } = await getCollections()
   try {
     // Update document in MongoDB
     const result = await seriesCollection.updateOne(
@@ -334,6 +335,7 @@ app.patch("/googleId", async (req, res) => {
 // Getting series info
 app.get("/series_info", async (req, res) => {
   const email = req.query.email;
+  const { seriesCollection } = await getCollections()
   try {
     const seriesData = await seriesCollection
       .find({ userEmail: email })
@@ -346,8 +348,40 @@ app.get("/series_info", async (req, res) => {
 });
 
 app.post("/generate_video", async (req, res) => {
-  const { email, seriesId } = req.body;
-  console.log("email and series id", email, seriesId);
+  const { email, seriesId, postADay } = req.body;
+  console.log("series id and post", postADay, seriesId);
+  const { scheduleCollection, seriesCollection } = await getCollections()
+  // try {
+  //   // const scheduleCollection = database.collection("scheduleCollection");
+
+  //   const intervalHours = postADay === 1 ? 10 : 5;
+  //   const totalTasks = postADay * 2; // 30 days * posts per day
+  //   const currentTime = new Date();
+
+  //   for (let i = 0; i < totalTasks; i++) {
+  //     const scheduleTime = new Date(
+  //       currentTime.getTime() + i * intervalHours * 90000
+  //     );
+  //     const task = {
+  //       seriesId,
+  //       status: "pending",
+  //       scheduleTime,
+  //       lastRunTime: null,
+  //       result: null,
+  //     };
+
+  //     await scheduleCollection.insertOne(task);
+  //   }
+
+  //   res.status(200).send(`Scheduled ${totalTasks} tasks successfully.`);
+  // } catch (error) {
+  //   console.error("Failed to schedule task:", error);
+  //   res.status(500).send("Failed to schedule task.");
+  // } finally {
+  //   // await dbClient.close();
+  // }
+
+  console.log("email and series id",  seriesId);
   const seriesData = await seriesCollection.findOne({
     _id: new ObjectId(seriesId),
   });
@@ -368,75 +402,74 @@ app.post("/generate_video", async (req, res) => {
         ).replace("{topicCount}", "1"),
       },
     };
-    const topicId = "f1d8ccae-7499-41d1-8163-f968c031e1d8";
+    const topicId = "098ffce8-5802-42ac-91a6-9c6a06b302f3";
     const chatGPTAPI = await ensureChatGPTAPI();
     if (chatGPTAPI) {
       // const topicId = await main(modifiedChannel, seriesId);
       console.log('topic id inside the generate video function', topicId)
       const generatedVideo = await test(topicId)
       console.log('generate video cloul link', generatedVideo)
-      // YOUTUBE FUNCTIONALITY
-      const tokens = await userCollection.findOne({
-        googleId: seriesData.googleId,
-      });
-      if (!tokens) {
-        console.error("No tokens found for the given Google ID.");
-        return;
-      }
-      try {
-        const newAccessToken = await refreshAccessToken(tokens.refreshToken);
-        console.log("New Access Token:", newAccessToken);
-      
-       
-        oAuth2Client.setCredentials({
-          access_token: newAccessToken,
-          refresh_token: tokens.refreshToken, 
-        });
-             
-      } catch (error) {
-        console.error("Error refreshing access token:", error);
-        res.status(500).send("Failed to refresh Google access token.");
-      }
+  //     // YOUTUBE FUNCTIONALITY
+  //     const tokens = await userCollection.findOne({
+  //       googleId: seriesData.googleId,
+  //     });
+  //     if (!tokens) {
+  //       console.error("No tokens found for the given Google ID.");
+  //       return;
+  //     }
+  //     try {
+  //       const newAccessToken = await refreshAccessToken(tokens.refreshToken);
+  //       console.log("New Access Token:", newAccessToken);
 
-      console.log("oauth", oAuth2Client.credentials);
-      const youtube = google.youtube({
-        version: "v3",
-        auth: oAuth2Client,
-      });
-      const output = path.join(__dirname, "concatFile.mp4");
-      const MidjourneyImagesCollection = db.collection("MidjourneyImages");
-      const title = await MidjourneyImagesCollection.findOne(
-        { topicId },
-        { projection: { topic: 1, _id: 0 } }
-      );
-      console.log("tittle", title.topic);
-      try {
-        const response = await youtube.videos.insert({
-          part: "snippet,status",
-          requestBody: {
-            snippet: {
-              title: title.topic,
-              // description: description,
-            },
-            status: {
-              privacyStatus: "private",
-            },
-          },
-          media: {
-            body: fs.createReadStream(output),
-          },
-        });
-        console.log("youtube res", response);
-        console.log(
-          `Video uploaded with ID: ${
-            response.data.id
-          } on ${new Date().toLocaleString()}`
-        );
-      } catch (error) {
-        console.error("Failed to upload video:", error);
-      }
+  //       oAuth2Client.setCredentials({
+  //         access_token: newAccessToken,
+  //         refresh_token: tokens.refreshToken,
+  //       });
 
-      console.log('final output', generatedVideo)
+  //     } catch (error) {
+  //       console.error("Error refreshing access token:", error);
+  //       res.status(500).send("Failed to refresh Google access token.");
+  //     }
+
+  //     console.log("oauth", oAuth2Client.credentials);
+  //     const youtube = google.youtube({
+  //       version: "v3",
+  //       auth: oAuth2Client,
+  //     });
+  //     const output = path.join(__dirname, "concatFile.mp4");
+  //     const MidjourneyImagesCollection = db.collection("MidjourneyImages");
+  //     const title = await MidjourneyImagesCollection.findOne(
+  //       { topicId },
+  //       { projection: { topic: 1, _id: 0 } }
+  //     );
+  //     console.log("tittle", title.topic);
+  //     try {
+  //       const response = await youtube.videos.insert({
+  //         part: "snippet,status",
+  //         requestBody: {
+  //           snippet: {
+  //             title: title.topic,
+  //             // description: description,
+  //           },
+  //           status: {
+  //             privacyStatus: "private",
+  //           },
+  //         },
+  //         media: {
+  //           body: fs.createReadStream(output),
+  //         },
+  //       });
+  //       console.log("youtube res", response);
+  //       console.log(
+  //         `Video uploaded with ID: ${
+  //           response.data.id
+  //         } on ${new Date().toLocaleString()}`
+  //       );
+  //     } catch (error) {
+  //       console.error("Failed to upload video:", error);
+  //     }
+
+  //     console.log('final output', generatedVideo)
     } else {
       console.error("Failed to initialize ChatGPTAPI");
     }
@@ -445,53 +478,191 @@ app.post("/generate_video", async (req, res) => {
   }
 });
 
+// HELPER FUNCTION FOR PROCESSING MAIN FUNCTION RETURN
 
-// GENERATE VIDEO WITH CRON SCHEDULE
-// app.post("/generate_video", async (req, res) => {
-//   const { email, seriesId, interval } = req.body;
-//   console.log("Received:", email, seriesId, "Interval:", interval);
+async function processGPTTask(task) {
+  const {  seriesCollection } = await getCollections()
+  try {
+    const seriesData = await seriesCollection.findOne({
+      _id: new ObjectId(task.seriesId),
+    });
+    if (!seriesData) throw new Error("Series data not found");
 
-//   // Determine the cron schedule string based on the interval
-//   const scheduleString = interval === 1 ? '0 0 * * *' : '0 0,12 * * *'; // At 00:00 daily for once a day, at 00:00 and 12:00 for twice a day
+    const topic = seriesData.content;
+    const modifiedChannel = {
+      ...channel, // Spread the existing channel object
+      Motivation: {
+        ...channel.Motivation,
+        GetStoriesList: channel.Motivation.GetStoriesList.replace(
+          "{topicName}",
+          topic
+        ).replace("{topicCount}", "1"),
+      },
+    };
 
-//   let runCount = 0;
-//   const maxRuns = 30 * (interval === 1 ? 1 : 2); // 30 days * number of times per day
+    const chatGPTAPI = await ensureChatGPTAPI(); // Ensure this function is defined and imported
+    if (!chatGPTAPI) {
+      throw new Error("Failed to initialize ChatGPT API");
+    }
 
-//   const task = cron.schedule(scheduleString, async () => {
-//     if (runCount >= maxRuns) {
-//       console.log("Scheduled task completed.");
-//       task.stop();
-//       return;
-//     }
+    const topicId = await main(modifiedChannel, task.seriesId);
+    if (!topicId) {
+      throw new Error("Failed to process topic via GPT");
+    }
 
-//     // Increment the run count
-//     runCount++;
+    console.log("Topic ID inside the generate video function:", topicId);
+    return { topicId, seriesData };
+  } catch (error) {
+    console.error(
+      `Failed processing GPT task for series ID ${task.seriesId}: ${error}`
+    );
+    throw error; // Rethrow to handle it in the caller function
+  }
+}
 
-//     // Existing code to generate video
-//     try {
-//       const seriesData = await seriesCollection.findOne({
-//         _id: new ObjectId(seriesId),
-//       });
+// SETTING REFRESH TOKEN
+async function updateAccessToken(tokens) {
+  try {
+    if (!tokens) throw new Error("No tokens found for the given Google ID.");
+    const newAccessToken = await refreshAccessToken(tokens.refreshToken);
+    console.log("New Access Token:", newAccessToken);
+
+    oAuth2Client.setCredentials({
+      access_token: newAccessToken,
+      refresh_token: tokens.refreshToken,
+    });
+
+    return newAccessToken;
+  } catch (error) {
+    console.error("Error refreshing access token:", error);
+    throw error;
+  }
+}
+
+// UPLOADING YOUTUBE VIDEO
+async function uploadToYouTube(
+  seriesData,
+  topicId,
+  accessToken,
+  generatedVideo
+) {
+  // Separate function to handle YouTube uploading logic
+  console.log("New access token", accessToken);
+  console.log("oauth", oAuth2Client.credentials);
+  const {  midjourneyImageCollection } = await getCollections()
+  const youtube = google.youtube({
+    version: "v3",
+    auth: oAuth2Client,
+  });
+  const videoFileName = `${topicId}_finalVideo.mp4`;
+  const output = path.join(__dirname, videoFileName);
+  // const output = path.join(__dirname, "concatFile.mp4");
+  const title = await midjourneyImageCollection.findOne(
+    { topicId },
+    { projection: { topic: 1, _id: 0 } }
+  );
+  console.log("title", title.topic);
+
+  const response = await youtube.videos.insert({
+    part: "snippet,status",
+    requestBody: {
+      snippet: {
+        title: title.topic,
+      },
+      status: {
+        privacyStatus: "private",
+      },
+    },
+    media: {
+      body: fs.createReadStream(output),
+    },
+  });
+  console.log("YouTube response", response);
+  console.log(
+    `Video uploaded with ID: ${
+      response.data.id
+    } on ${new Date().toLocaleString()}`
+  );
+}
+
+// Running scheduled task for
+
+async function runScheduledTasks() {
+  const { userCollection, scheduleCollection} = await getCollections()
+  try {
+    // Find tasks that are scheduled to run and are still pending
+    const query = {
+      status: { $in: ["failed", "pending"] },
+      scheduleTime: { $lte: new Date() },
+    };
+    const update = {
+      $set: { status: "in_progress", lastRunTime: new Date() },
+    };
+
+    const options = {
+      returnNewDocument: true,
+    };
+
+    const pendingTasks = await scheduleCollection.find(query).toArray();
+    console.log(`Processing started for ${pendingTasks.length} pending tasks at ${new Date().toISOString()}`);
+
+
+    for (const task of pendingTasks) {
+     try {
+      console.log(`Processing started for task with ID ${task._id} at ${new Date().toISOString()}`);
       
-//       if (!seriesData) {
-//         console.log("Series data not found");
-//         return;
-//       }
+      const updateResult = await scheduleCollection.updateOne(
+        { _id: task._id, status: { $in: ["failed", "pending"] } },
+        { $set: { status: "in_progress", lastRunTime: new Date() } }
+      );
 
-//       console.log("Series data found:", seriesData.content);
-//       // Further processing...
-
-//       // Placeholder for YouTube upload functionality
-//       console.log(`Running task ${runCount} of ${maxRuns} at ${new Date().toLocaleString()}`);
-
-//     } catch (error) {
-//       console.error("Error in scheduled task:", error);
-//     }
-//   });
-
-//   res.send("Scheduled video generation task started.");
-// });
-
+      if (updateResult.modifiedCount === 1){
+        try {
+          const { topicId, seriesData } = await processGPTTask(task);
+          const generatedVideo = await test(topicId);
+          console.log("generate video cloul link", generatedVideo);
+          // YOUTUBE FUNCTIONALITY
+          const tokens = await userCollection.findOne({
+            googleId: seriesData.googleId,
+          });
+  
+          const accessToken = await updateAccessToken(tokens);
+          console.log("New access token", accessToken);
+          console.log("oauth", oAuth2Client.credentials);
+  
+          await uploadToYouTube(seriesData, topicId, accessToken, generatedVideo);
+  
+          // Update task status to completed if all went well
+          await scheduleCollection.updateOne(
+            { _id: task._id },
+            { $set: { status: "completed", result: "Success" } }
+          );
+        } catch (error) {
+          // Handle any errors, e.g., update the task with a failed status
+          await scheduleCollection.updateOne(
+            { _id: task._id },
+            {
+              $set: { status: "failed", result: error.message },
+            }
+          );
+        }
+      } else {
+        console.log("Task already processed or status updated by another instance");
+      }
+     } catch (error) {
+      console.error(`Error processing task with ID ${task._id}: ${error}`);
+    await scheduleCollection.updateOne(
+      { _id: task._id },
+      { $set: { status: "failed", result: error.message } }
+    );
+     }
+    }
+  } catch (error) {
+    console.error("Error running scheduled tasks:", error);
+  } finally {
+    // await client.close();
+  }
+}
 
 const imagesDir = path.join(__dirname, "..", "videoshow", "examples");
 // Ensure the directory exists
@@ -515,14 +686,8 @@ async function getAudioDuration(filePath) {
 
 async function getAllMidjourneyData(topicId) {
   try {
-    const uri =
-      "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
-    const client = new MongoClient(uri);
-    await client.connect();
-console.log('topic inside getAllMidjourneyData', topicId)
-    const db = client.db();
-    const collection = db.collection("MidjourneyImages");
-    const documents = await collection
+    const { midjourneyImageCollection } = await getCollections()
+    const documents = await midjourneyImageCollection
       .find({ topicId: topicId })
       .project({ _id: 0, upscaleImage_url: 1, quote: 1, topic: 1 })
       .limit(5)
@@ -543,8 +708,8 @@ console.log('topic inside getAllMidjourneyData', topicId)
 
     // // Function to download an image
     async function downloadImage(url, index, topicId) {
-      const imageFilename = `image_${topicId}_${index+1}.jpg`;
-      console.log('download image file name', imageFilename)
+      const imageFilename = `image_${topicId}_${index + 1}.jpg`;
+      console.log("download image file name", imageFilename);
       const imagePath = path.join(imagesDir, imageFilename);
       const response = await fetch(url);
       const buffer = await response.arrayBuffer();
@@ -600,7 +765,7 @@ async function uploadVideoToCloudinary(videoFilePath) {
     });
 
     // Log the result (optional)
-    // console.log('Upload result:', result);
+    console.log('Upload result:', result);
 
     return result.secure_url; // Return the secure URL of the uploaded video
   } catch (error) {
@@ -612,24 +777,19 @@ async function uploadVideoToCloudinary(videoFilePath) {
 // Function to upload video link to mongodb
 
 async function uploadVideoLinkToMongoDB(videoLink, topicId) {
-  const uri =
-    "mongodb+srv://balpreet:ct8bCW7LDccrGAmQ@cluster0.2pwq0w2.mongodb.net/tradingdb";
-  const client = new MongoClient(uri);
+  const { midjourneyImageCollection, videoCollection } = await getCollections()
   try {
-    await client.connect();
-    const db = client.db();
-    const collection = db.collection("FinalVideo");
+    
     // Insert document with videoLink and default status
-    const result = await collection.insertOne({
+    const result = await videoCollection.insertOne({
       videoLink: videoLink,
       status: "review",
       topicId: topicId,
     });
     console.log(`Video link uploaded to MongoDB with ID: ${result.insertedId}`);
     if (result.insertedId) {
-      const imageCollection = db.collection("MidjourneyImages");
-      // Update all matching documents in the MidjourneyImages collection
-      const updateResult = await imageCollection.updateMany(
+     // Update all matching documents in the MidjourneyImages collection
+      const updateResult = await midjourneyImageCollection.updateMany(
         { topicId: topicId }, // Filter documents by topicId
         { $set: { videoStatus: "created" } } // Set new property videoStatus to "created"
       );
@@ -641,32 +801,32 @@ async function uploadVideoLinkToMongoDB(videoLink, topicId) {
   } catch (error) {
     console.log(`Error uploading video link to MongoDB: ${error}`);
   } finally {
-    await client.close(); // Ensure that the client is closed after the operation
+    // await client.close(); // Ensure that the client is closed after the operation
   }
 }
 
 // Usage example
-async function test(topicId) {
-  console.log('topicId inside test functin ', topicId)
-  const videoFileName = `${topicId}_finalVideo.mp4`;  
-  const videoFilePath = path.join(__dirname, videoFileName);
+async function test(topicId, generatedFiles) {
+  console.log("topicId inside test functin ", topicId);
+  const videoFileName = `${topicId}_finalVideo.mp4`;
+  const videoFilePath = path.join(__dirname,"..","/videoshow", videoFileName);
   // const videoFilePath = path.join(__dirname, "concatFile.mp4");
-  console.log('inside test function', videoFileName)
+  console.log("inside test function", videoFileName);
   let cloudinaryLink;
   try {
-    const generatedFiles = await getAllMidjourneyData(topicId);
+    // const generatedFiles = await getAllMidjourneyData(topicId);
 
     // creating video for each quote along with subtitle
-    await createVideoWithGeneratedFiles(generatedFiles);
+    await createVideoWithGeneratedFiles(generatedFiles, topicId);
     console.log("All videos created and merged successfully.");
 
-    console.log('Midjourney data:', generatedFiles);
+    console.log("Midjourney data:", generatedFiles);
 
     // concatenate all the videos to make a single video
 
     await concatenateVideos(topicId);
 
-    console.log('Concatenation done for video')
+    console.log("Concatenation done for video");
     // uploading the video in cloudinary
 
     await uploadVideoToCloudinary(videoFilePath)
@@ -676,7 +836,6 @@ async function test(topicId) {
       })
       .catch((error) => {
         console.error("Error uploading video:", error);
-        
       });
 
     console.log("cludl link", cloudinaryLink);
@@ -689,8 +848,41 @@ async function test(topicId) {
     console.error("Error:", error);
   }
 }
+const topicId = "098ffce8-5802-42ac-91a6-9c6a06b302f3";
 
-// test();
+const generatedFiles = [
+    {
+      audio: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_0.mp3',        
+      captions: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_0.srt',     
+      image: 'image_098ffce8-5802-42ac-91a6-9c6a06b302f3_1.jpg',
+      duration: 10.9975
+    },
+    {
+      audio: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_1.mp3',        
+      captions: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_1.srt',     
+      image: 'image_098ffce8-5802-42ac-91a6-9c6a06b302f3_2.jpg',
+      duration: 2.925688
+    },
+    {
+      audio: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_2.mp3',        
+      captions: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_2.srt',     
+      image: 'image_098ffce8-5802-42ac-91a6-9c6a06b302f3_3.jpg',
+      duration: 4.127313
+    },
+    {
+      audio: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_3.mp3',        
+      captions: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_3.srt',     
+      image: 'image_098ffce8-5802-42ac-91a6-9c6a06b302f3_4.jpg',
+      duration: 7.183625
+    },
+    {
+      audio: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_4.mp3',        
+      captions: 'output_098ffce8-5802-42ac-91a6-9c6a06b302f3_4.srt',     
+      image: 'image_098ffce8-5802-42ac-91a6-9c6a06b302f3_5.jpg',
+      duration: 6.922438
+    }
+  ]
+test(topicId, generatedFiles);
 app.listen(PORT, () => {
   console.log(`lOCAL HOST RUNNING ON: HTTP://LOCALHOST:${PORT}`);
 });

@@ -31,7 +31,7 @@ const Create = () => {
     }
     console.log(data)
     try {
-      const response = await axios.post('https://3000-baitech365-aividedit-zhzmzoee9jq.ws-us110.gitpod.io/series', data);
+      const response = await axios.post('http://localhost:3000/series', data);
       const resData = await response.data
       console.log(response)
       console.log(response.data)
