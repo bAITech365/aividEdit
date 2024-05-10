@@ -70,29 +70,42 @@ console.log('seried data', seriesData)
 
 
 
-  const handleGenerateVideo = async (item) => {
+  const handleScheduleVideo = async (item) => {
     console.log(item, item._id)
+    if(!googleId){
+      alert("Connect a google account for the series.")
+      return
+    }
     try {
-      const response = await axios.post(`http://localhost:3000/generate_video`, {
+      const response = await axios.post(`http://localhost:3000/scheduled_video`, {
         email: userPlan?.email,
         seriesId: item._id,
         postADay: 1,
 
       });
       console.log(response?.data);
+      alert(`${response.data}`)
     } catch (error) {
+      alert(`${error}`)
       console.error(error);
     }
   
   };
   const handlePostVideo = async (item) => {
+    if(!googleId){
+      alert("Connect a youtube account first")
+      return
+    }
     try {
-      const response = await axios.post(`http://localhost:3000/upload_video`, {
+      const response = await axios.post(`http://localhost:3000/generate_video`, {
         email: userPlan?.email,
+        seriesId: item._id,
        });
       console.log(response?.data);
+      alert(`${response.data}`)
     } catch (error) {
       console.error(error);
+      alert(`${error}`)
     }
   
   };
@@ -120,11 +133,11 @@ console.log('seried data', seriesData)
           onClick={() => handleConnectYoutube(item)}
           >CONNECT YOUTUBE ACCOUNT</button>
           <button className='bg-gradient-to-r block from-primary to-blue-700 text-white py-3 px-6 text-lg rounded-lg font-semibold '
-          onClick={() => handleGenerateVideo(item)}
-          >GENERATE VIDEO</button>
+          onClick={() => handleScheduleVideo(item)}
+          >SCHEDULE VIDEO</button>
           <button className='bg-gradient-to-r block from-primary to-blue-700 text-white py-3 px-6 text-lg rounded-lg font-semibold '
           onClick={() => handlePostVideo(item)}
-          >POST VIDEO</button>
+          >POST A VIDEO</button>
       </div>
         </div>
        ))

@@ -499,42 +499,9 @@ app.post("/scheduled_video", async (req, res) => {
   } finally {
     // await dbClient.close();
   }
-
-
 });
 
-// todo post a schedule test
-function postSchedule(postADay) {
-  try {
-    if (typeof postADay !== 'number') {
-      throw new Error("Invalid input: postADay must be a number");
-    }
 
-    const totalTasks = postADay * 30;
-    const intervalHours = postADay === 1 ? 24 : 12;
-    const currentTime = new Date();
-
-    console.log(`Scheduling ${totalTasks} tasks...`); // Log how many tasks will be scheduled
-
-    for (let i = 0; i < totalTasks; i++) {
-      const scheduleTime = new Date(currentTime.getTime() + i * intervalHours * 60 * 60000);
-      const task = {
-        seriesId: 'your_series_id', // Make sure this is defined or replace it with a valid identifier
-        status: "pending",
-        scheduleTime,
-        lastRunTime: null,
-        result: null,
-      };
-      console.log('Task scheduled:', task);
-    }
-
-  } catch (error) {
-    console.error('Error scheduling tasks:', error);
-  }
-}
-
-const postADay = 2;
-postSchedule(postADay); 
 // HELPER FUNCTION FOR PROCESSING MAIN FUNCTION RETURN
 
 function modifyChannelForGPT(topic) {
