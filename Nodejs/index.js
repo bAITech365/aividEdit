@@ -385,9 +385,9 @@ app.post("/generate_video", async (req, res) => {
     if (chatGPTAPI) {
         // TODO ACTIVATE IT WHEN MIDJOURNEY API IS WORKING
       // const topicId = await main(modifiedChannel, seriesId);
-      console.log('topic id inside the generate video function', topicId)
-        // TODO COMMENT IT WHEN MIDJOURNEY API IS WORKING
+      // TODO COMMENT IT WHEN MIDJOURNEY API IS WORKING
       const topicId = topicIds[Math.floor(Math.random() * topicIds.length)];
+      console.log('topic id inside the generate video function', topicId)
       const generatedVideo = await test(topicId)
       console.log('generate video cloul link', generatedVideo)
       // YOUTUBE FUNCTIONALITY
