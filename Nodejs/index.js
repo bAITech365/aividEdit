@@ -58,10 +58,7 @@ async function ensureChatGPTAPI() {
 }
 
 const PORT = process.env.PORT || 3000;
-// const db = await connect();
-// const userCollection = db.collection("user");
-// const seriesCollection = db.collection("series");
-// const scheduleCollection = db.collection("video_schedules");
+
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
