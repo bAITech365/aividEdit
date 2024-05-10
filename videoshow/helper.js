@@ -3,6 +3,7 @@ const path = require('path');
 const { createClient, srt } = require('@deepgram/sdk');
 const deepgram = createClient('a7056d8828505c8de14a6210f133bcdb1efc21f2');
 
+
 async function generateVoice(text, topicId, index) {
     const fetch = (await import('node-fetch')).default;
 
@@ -11,7 +12,7 @@ async function generateVoice(text, topicId, index) {
         headers: {
             'Accept': 'audio/mpeg',
             'Content-Type': 'application/json',
-            'xi-api-key': 'ca1d85200318925fd4d3937c3db1669c'
+            'xi-api-key': '38acbbe9c5c6df8460e8c58712d4a708'
         },
         body: JSON.stringify({
             text: text,
@@ -31,7 +32,7 @@ async function generateVoice(text, topicId, index) {
         const audioFileName = `output_${timestamp}.mp3`; // Unique audio filename with timestamp
         const audioFilePath = path.join(folderPath, audioFileName);
         const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/29vD33N1CtxCmqQRPOHJ', options);
-        console.log('audioFileName', audioFileName)
+        // console.log('response from eleven labs', response)
         const buffer = await response.arrayBuffer();
         const data = Buffer.from(buffer);
         // fs.mkdirSync(folderPath, { recursive: true }); // Create the folder if it doesn't exist

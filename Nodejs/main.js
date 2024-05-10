@@ -1,4 +1,4 @@
-const { connect, getCollections } = require('./mongoConnection');
+const { connect, getCollections } = require("./mongoConnection");
 const { helper } = require("./helper.js");
 const { v4: uuidv4 } = require("uuid");
 const cron = require("node-cron");
@@ -120,64 +120,133 @@ async function downloadVideo(url, outputPath) {
 
 // let stories=await JSON.parse(result);
 
+async function fetchStories(modifiedChannel) {
+  const stories = await helper.GPTRun(
+    modifiedChannel.Motivation.GetStoriesList
+  );
+  if (!stories || stories.length === 0)
+    throw new Error("No stories returned from GPT run.");
+  console.log("Stories:", stories);
+  return stories;
+}
+
+async function explainStories(modifiedChannel, stories) {
+  const storyDetails = await helper.GPTRunForEach(
+    modifiedChannel.Motivation.ExplainStory,
+    "{O2}",
+    stories
+  );
+  console.log("StoryDetails in main:", storyDetails);
+  if (!storyDetails || storyDetails.length < 5)
+    throw new Error(
+      "No or insufficient explain story returned from GPTRunForEach."
+    );
+  return storyDetails;
+}
+
+async function generateMidJourneyPrompts(modifiedChannel, storyDetails) {
+  try {
+    const prompts = await helper.GPTRunForEach(
+      modifiedChannel.Motivation.MidjourneyRunPrompt,
+      "{O2}",
+      storyDetails
+    );
+    if (!prompts || prompts.length < 4) {
+      throw new Error("Insufficient MidJourney prompts returned.");
+    }
+    return prompts;
+  } catch (error) {
+    console.error(`Error generating MidJourney prompts: ${error}`);
+    throw new Error(`Failed to generate MidJourney prompts: ${error.message}`);
+  }
+}
+
+async function setupMidJourneyImages(prompts, seriesId) {
+  try {
+    const topicId = uuidv4();
+    prompts.forEach((prompt) => {
+      prompt.topicId = topicId;
+      prompt.status = "Not started";
+      prompt.seriesId = seriesId;
+    });
+    await helper.bulkInsertDocuments("MidjourneyImages", prompts);
+    return topicId;
+  } catch (error) {
+    console.error(`Error setting up MidJourney images: ${error}`);
+    throw new Error(`Failed to setup MidJourney images: ${error.message}`);
+  }
+}
+
+async function manageImageProcessing(topicId, seriesId) {
+  const job = scheduleCronJob(seriesId);
+  try {
+    await waitForAllImagesToFinish(seriesId, job);
+    console.log("All images processed successfully.");
+  } catch (error) {
+    console.error(`Error waiting for image processing: ${error}`);
+    throw new Error(
+      `Failed due to timeout or other error in image processing: ${error.message}`
+    );
+  } finally {
+    job.stop();
+  }
+}
+
+function scheduleCronJob(seriesId) {
+  try {
+    return cron.schedule("*/30 * * * * *", async () => {
+      await cronJob(seriesId);
+    });
+  } catch (error) {
+    console.error(`Error scheduling cron job: ${error}`);
+    throw new Error(`Failed to schedule cron job: ${error.message}`);
+  }
+}
+
+// modified channel inside main {
+//   Motivation: {
+//     GetStoriesList: 'Only respond in Json Format in format: [<topic1 >,<topic2>,...]. Please provide 1 Topics for a Life Pro Tips topics channel. We will share 2 quotes each day on 1 topic.',
+//     ExplainStory: 'Only respond in Json Format [{"topic": "<>","quote": "<>"},...]. Give me 5 quotes on the topic {O1}',
+//     MidjourneyRunPrompt: 'I want to generate image on which i can show these quotes . Please provide a prompt for image generation for each of the provided quote in a json format [{"topic": "<>","quote": "<>","prompt":"<>"},...] . Quotes are following {O2}',
+//     SocailTags: 'Please provide Social Media Tags, Topic Title, Thumbnail suggestion for this topic O1',
+//     CloudinaryConfig: {}
+//   }
+// }
+
 async function main(modifiedChannel, seriesId) {
   console.log("series id inside main ", seriesId);
   console.log("modified channel inside main", modifiedChannel);
 
   try {
-    let stories = await helper.GPTRun(
-      modifiedChannel.Motivation.GetStoriesList
-    );
-    if (!stories || stories.length === 0) throw new Error("No stories returned from GPTRun.");
-
-    console.log("Stories:", stories);
-
-    let storyDetails = await helper.GPTRunForEach(
-      modifiedChannel.Motivation.ExplainStory,
-      "{O2}",
-      stories
-    );
-    
-    if (!storyDetails || storyDetails.length === 0) throw new Error("No story details returned from GPTRunForEach.");
-
-    console.log("StoryDetails in main:", storyDetails);
-
-    let Midjourneyprompts = await helper.GPTRunForEach(
-      modifiedChannel.Motivation.MidjourneyRunPrompt,
-      "{O2}",
+    const stories = await fetchStories(modifiedChannel);
+    const storyDetails = await explainStories(modifiedChannel, stories);
+    const midJourneyPrompts = await generateMidJourneyPrompts(
+      modifiedChannel,
       storyDetails
     );
 
-    if (!Midjourneyprompts || Midjourneyprompts.length === 0) throw new Error("No Midjourney prompts returned from GPTRunForEach.");
+    // const topicId = setupMidJourneyImages(midJourneyPrompts, seriesId);
 
-    console.log("Midjourneyprompts main:", Midjourneyprompts);
+    const topicId = setupMidJourneyImages(midJourneyPrompts, seriesId);
 
-    let topicId = uuidv4();
-    Midjourneyprompts.forEach((prompt) => {
-      prompt.topicId = topicId;
-      prompt.status = "Notstarted";
-      prompt.seriesId = seriesId;
-    });
-    console.log("topic id inside main", topicId);
+    await manageImageProcessing(topicId, seriesId);
 
-    await helper.bulkInsertDocuments("MidjourneyImages", Midjourneyprompts);
-
-    const job = cron.schedule("*/60 * * * * *", async () => {
-      await cronJob(seriesId);
-    });
+    // const job = cron.schedule("*/60 * * * * *", async () => {
+    //   await cronJob(seriesId);
+    // });
     // let channelTags=await GPTRunForEach(modifiedChannel.Motivation.SocailTags,'O1',stories);
     // Wait for all images to reach a final state (example: "finished")
-    try {
-      await waitForAllImagesToFinish(seriesId, job);
-      console.log("All images processing finished successfully.");
-    } catch (error) {
-      console.error(`Error waiting for image processing: ${error}`);
-  // Include original error message for better context
-  throw new Error(`Failed due to timeout or other error in image processing: ${error.message}`);
-    } finally {
-      job.stop();  // Ensure that the cron job is stopped regardless of success or failure.
-    }
-    console.log('Topic id after try catch', topicId)
+    //   try {
+    //     await waitForAllImagesToFinish(seriesId, job);
+    //     console.log("All images processing finished successfully.");
+    //   } catch (error) {
+    //     console.error(`Error waiting for image processing: ${error}`);
+    // // Include original error message for better context
+    // throw new Error(`Failed due to timeout or other error in image processing: ${error.message}`);
+    //   } finally {
+    //     job.stop();  // Ensure that the cron job is stopped regardless of success or failure.
+    //   }
+    console.log("Topic id after try catch", topicId);
     // let FinalMovies=await CloudinaryForEach(images,storyDetails,channel.Motivation.CloudinaryConfig,channelTags);
     return topicId;
   } catch (error) {
@@ -201,9 +270,8 @@ async function waitForAllImagesToFinish(seriesId, job, timeout = 600000) {
     //   return client.db();
     // }
     const checkCompletion = async () => {
-      const { midjourneyImageCollection } = await getCollections()
+      const { midjourneyImageCollection } = await getCollections();
       try {
-       
         const count = await midjourneyImageCollection.countDocuments({
           seriesId: seriesId,
           status: { $ne: "finished" },
@@ -233,9 +301,9 @@ async function waitForAllImagesToFinish(seriesId, job, timeout = 600000) {
 async function cronJob(seriesId) {
   console.log(`seried id inside cron job`, seriesId);
   console.log("Running cron job...", new Date());
-  const {  midjourneyImageCollection} = await getCollections()
+  const { midjourneyImageCollection } = await getCollections();
   try {
-    const db = await connect();
+    // const db = await connect();
 
     // Find documents with status "Notstarted"
     const notStartedImages = await midjourneyImageCollection
@@ -257,7 +325,7 @@ async function cronJob(seriesId) {
       const prompt = image.prompt;
       // console.log(`Generating image for notStartedImages ${image._id} ..  ${prompt}...`);
       const task_id = await helper.generateImage(prompt);
-      console.log('image generated for: ',task_id);
+      console.log("image generated for: ", task_id);
 
       // Update the status to "InProgess"
       if (task_id) {
@@ -265,9 +333,10 @@ async function cronJob(seriesId) {
           { _id: image._id },
           { $set: { status: "InProgess", task_id: task_id } }
         );
-        console.log(`Image stored to mongodb for from notStarted loop ${image._id}`);
+        console.log(
+          `Image stored to mongodb for from notStarted loop ${image._id}`
+        );
       }
-
     }
     for (const image of inProgressImages) {
       await waitRandom(4000);
@@ -276,7 +345,7 @@ async function cronJob(seriesId) {
         `checking image inprogress for ${image._id} .. for ${task_id}...`
       );
       const { status, image_url } = await helper.fetchImageStatus(task_id);
-      console.log('fetch status from midjourney', status, image_url);
+      console.log("fetch status from midjourney", status, image_url);
       // Update the status to "InProgess"
       if (status === "finished" && image_url) {
         await midjourneyImageCollection.updateOne(
@@ -288,14 +357,17 @@ async function cronJob(seriesId) {
           { _id: image._id },
           { $set: { status: "upscalePending", upscaleTaskId: upscaleTaskId } }
         );
-        console.log(`Image stored to mongodb for upscale pending inside inprogress loop ${image._id}`);
+        console.log(
+          `Image stored to mongodb for upscale pending inside inprogress loop ${image._id}`
+        );
       }
-
     }
     for (const image of upscalePendingImages) {
       await waitRandom(4000);
       const task_id = image.upscaleTaskId;
-      console.log(`checking upscale image for ${image._id} .. for task id of ${task_id}...`);
+      console.log(
+        `checking upscale image for ${image._id} .. for task id of ${task_id}...`
+      );
       const { status, image_url } = await helper.fetchImageStatus(task_id);
 
       console.log(status, image_url);
@@ -305,9 +377,10 @@ async function cronJob(seriesId) {
           { _id: image._id },
           { $set: { status: "finished", upscaleImage_url: image_url } }
         );
-        console.log(`Image generated for upscale inside upscalePending loop ${image._id}`);
+        console.log(
+          `Image generated for upscale inside upscalePending loop ${image._id}`
+        );
       }
-
     }
     return Promise.resolve();
   } catch (error) {
@@ -317,7 +390,7 @@ async function cronJob(seriesId) {
 
 async function waitRandom(miliSeconds) {
   const randomWaitTime = Math.floor(Math.random() * miliSeconds);
-  console.log('random wait time', randomWaitTime);
+  console.log("random wait time", randomWaitTime);
   await new Promise((resolve) => setTimeout(resolve, randomWaitTime));
 }
 
